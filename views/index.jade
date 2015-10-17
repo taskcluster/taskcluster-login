@@ -1,0 +1,100 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='utf-8')
+    if title
+      title TaskCluster - Authentication
+    else
+      title TaskCluster - Authentication
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+
+    // Bootstrap
+    link(rel='stylesheet',
+         href='/assets/bootstrap/css/bootstrap.min.css')
+    link(rel='stylesheet',
+         href='/assets/bootstrap/css/bootstrap-theme.min.css')
+
+    // Custom styling
+    link(rel='stylesheet', href='/assets/style.css')
+
+    // jQuery and Bootstrap Javascript
+    script(src='/assets/jquery.min.js')
+    script(src='/assets/bootstrap/js/bootstrap.min.js')
+
+    // Persona login script and login script
+    script(src='https://login.persona.org/include.js')
+    script(src='/assets/script.js')
+  body.container
+    div.row
+      div.col-md-10.col-md-offset-1#content
+        h1 TaskCluster Authentication
+        hr
+        p
+          | The more accounts you authenticate with the more scopes you'll get.
+        br
+        form#persona-form(action='/login/persona', method='post')
+          input#persona-assertion(type='hidden', name='assertion')
+          button.btn.btn-primary#persona-signin(type='submit')
+            i.glyphicon.glyphicon-log-in
+            | &nbsp;Sign-in with Persona
+        br
+        form(action='/login/sso', method='post')
+          button.btn.btn-primary(type='submit')
+            i.glyphicon.glyphicon-log-in
+            | &nbsp;Sign-in with SSO
+        br
+        a(href="/sso-login")
+          | login with sso
+  //-
+        h2 Temporary Credentials
+        hr
+        if user
+          dl.dl-horizontal#credentials
+            dt ClientId
+            dd
+              code #{credentials.clientId}
+            dt AccessToken
+            dd
+              code #{credentials.accessToken}
+            dt Certificate
+            dd
+              pre(style="white-space: pre-line;")
+                | #{credentials.certificate}
+            dt
+            dd
+              a.btn.btn-danger(href="/logout?#{querystring}")
+                i.glyphicon.glyphicon-log-out
+                | &nbsp;Log out
+        else
+          if authFailed
+            div.alert.alert-warning
+              strong Authention Failed!
+              | &nbsp;Make sure you're logging with an &nbsp;
+              code @mozilla.com
+              | &nbsp;address...
+        if query.target && query.description
+          br
+          h2 Delegate Temporary Credentials
+          hr
+          p
+            | The following site would like access to your temporary
+            | credentials.
+          dl.dl-horizontal
+            dt Target
+            dd
+              b
+                code #{query.target}
+            dt Description
+            dd !{marked(query.description, {sanitize: true})}
+            dt
+            dd
+              if user
+                a.btn.btn-primary(href=target)
+                  i.glyphicon.glyphicon-lock
+                  | &nbsp;Grant Access
+              else
+                a.btn.btn-primary.disabled(href=query.target)
+                  i.glyphicon.glyphicon-lock
+                  | &nbsp;Grant Access
+                | &nbsp;(Please sign-in first)
+
