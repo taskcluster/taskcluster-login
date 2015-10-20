@@ -1,34 +1,55 @@
 Defaults:
   app:
     cookieSecrets: !env:list COOKIE_SECRETS
+    temporaryCredentials:
+      # Set the credentials to be valid 15 min before creation
+      # (allowing for a bit of clock skew)
+      startOffset:    '- 15 min'
+      # Set the credential to expire after 3 days
+      expiry:         '3 days'
+      # Credentials to issuing temporary credentials should have scopes:
+      # - assume:mozillians-user:*
+      # - assume:mozillians-group:*
+      # - assume:ldap-user:*
+      # - assume:ldap-group:*
+      credentials:
+        clientId:     !env TASKCLUSTER_CLIENT_ID
+        accessToken:  !env TASKCLUSTER_ACCESS_TOKEN
+  mozillians:
+    apiKey:         !env MOZILLIANS_API_KEY
+    allowedGroups:  !env:list MOZILLIANS_ALLOWED_GROUPS
   sso:
-    entryPoint:   !env SSO_ENTRYPOINT
-    certificate:  !env SSO_CERTIFICATE
-    issuer:       'taskcluster-login'
+    entryPoint:     !env SSO_ENTRYPOINT
+    certificate:    !env SSO_CERTIFICATE
+    issuer:         'taskcluster-login'
+    allowedGroups:  !env:list SSO_ALLOWED_GROUPS
   server:
     port:       !env:number PORT
     forceSSL:   !env:flag FORCE_SSL
     trustProxy: !env:flag TRUST_PROXY
     publicUrl:  !env PUBLIC_URL
-  taskcluster:
-    credentials:
-      clientId:     !env TASKCLUSTER_CLIENT_ID
-      accessToken:  !env TASKCLUSTER_ACCESS_TOKEN
 Profiles:
   production:
     server:
       forceSSL: true
   test:
+    mozillians:
+      group: ['taskcluster-users']
     server:
       port: 60174
       publicUrl: http://localhost:60174
   ngrok:
     app:
       cookieSecrets: ['Shhh']
+      temporaryCredentials:
+        credentials:
+          clientId:     'dummy'
+          accessToken:  'lol no secret here'
+    mozillians:
+      allowedGroups: ['taskcluster-users']
     sso:
+      allowedGroups: ['releng', 'shipit', 'Everyone', 'team_moco', 'shipitdev']
       issuer: taskcluster-login.ngrok.io
-      #issuer: http://www.okta.com/exk58q0ytqJycvEJ10h7
-      #entryPoint: "https://mozilla.oktapreview.com/home/mozilla_taskcluster_1/0oa58q0ytrGrirWLm0h7/19311"
       entryPoint: "https://mozilla.oktapreview.com/app/mozilla_taskcluster_1/exk58q0ytqJycvEJ10h7/sso/saml"
       certificate: >
         MIIDnjCCAoagAwIBAgIGAUsUDdUaMA0GCSqGSIb3DQEBBQUAMIGPMQswCQYDVQQGEwJVUzETMBEG

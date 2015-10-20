@@ -9,6 +9,9 @@ import config from 'taskcluster-lib-config'
 import persona from 'passport-persona'
 import bodyParser from 'body-parser'
 import saml from 'passport-saml'
+import Mozillians from 'mozillians-client'
+import User from './user'
+import querystring from 'querystring'
 
 require('source-map-support').install();
 
@@ -26,7 +29,6 @@ let launch = async (profile) =>  {
   if (cfg.server.forceSSL) {
     app.use(sslify.HTTPS(cfg.server.trustProxy));
   }
-
 
   // Setup views and assets
   app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
@@ -52,27 +54,51 @@ let launch = async (profile) =>  {
   app.use(passport.session());
 
   // Read and write user from signed cookie
-  passport.serializeUser((user, done) => done(null, ensureUser(user)));
-  passport.deserializeUser((user, done) => done(null, ensureUser(user)));
+  passport.serializeUser((user, done) => done(null, user.serialize()));
+  passport.deserializeUser((data, done) => done(null, User.deserialize(data)));
 
-  // Ensure that we have a valid user structure
-  let ensureUser = (user = {}) => {
-    return _.defaults(user, {
-      persona: [],
-      github: null,
-      ssoUser: null,
-      ssoGroups: [],
-    });
-  };
+  // Mozillians client
+  let mozillians = new Mozillians(cfg.mozillians.apiKey);
 
-  // Persona configuration
+  // Persona/mozillians configuration
   passport.use(new persona.Strategy({
     audience: cfg.server.publicUrl,
     passReqToCallback: true
-  }, (req, email, done) => {
-    let user = ensureUser(req.user);
-    user.persona = _.union(user.persona, [email]);
-    done(null, user);
+  }, async (req, email, done) => {
+    try {
+      let user = User.get(req);
+
+      // Find the user
+      let userLookup = await mozillians.users({email});
+      if (userLookup.results.length === 1) {
+        let u = userLookup.results[0];
+        if (u.is_vouched) {
+          user.mozillianUser = u.username;
+        }
+      }
+
+      // For each group to be considered we check if the user is a member
+      let groupLookups = await Promise.all(
+        cfg.mozillians.allowedGroups.map(group => {
+          return mozillians.users({email, group}).then(result => {
+            result.group = group;
+            return result;
+          });
+        })
+      );
+      groupLookups.forEach(g => {
+        if (g.results.length === 1) {
+          let u = g.results[0];
+          if (u.is_vouched && u.username === user.mozillianUser) {
+            user.addMozillianGroup(g.group);
+          }
+        }
+      });
+
+      done(null, user);
+    } catch (err) {
+      done(err, null);
+    }
   }));
   app.post('/login/persona', passport.authenticate('persona', {
     successRedirect: '/',
@@ -87,16 +113,21 @@ let launch = async (profile) =>  {
     path: '/login/sso',
     entryPoint: cfg.sso.entryPoint,
     cert: cfg.sso.certificate,
+    skipRequestCompression: true,
     passReqToCallback: true
   }, (req, profile, done) => {
-    console.log("authenticated profile: %j", profile);
-    let email = profile['urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress'];
-    let user = ensureUser(req.user);
-    if (email) {
-      user.ssoUser = email;
+    try {
+      let user = User.get(req);
+      user.ldapUser = profile['ldap-email'];
+      profile['ldap-groups'].forEach(group => {
+        if (cfg.sso.allowedGroups.indexOf(group) !== -1) {
+          user.addLDAPGroup(group);
+        }
+      });
       done(null, user);
+    } catch (err) {
+      done(err, null);
     }
-    done(null, null);
   }));
   app.post('/login/sso', passport.authenticate('saml', {
     successRedirect: '/',
@@ -104,21 +135,19 @@ let launch = async (profile) =>  {
     failureFlash: true
   }));
 
-  app.get('/sso-login', passport.authenticate('saml', {
-    failureRedirect:  '/',
-    failureFlash: true
-  }), (req, res) => {
+  // Add logout method
+  app.post('/logout', (req, res) => {
+    req.logout();
     res.redirect('/');
   });
 
-
-
-
   // Render index
   app.get('/', (req, res) => {
-    console.log(req.user);
+    let user = User.get(req);
+    let credentials = user.createCredentials(cfg.app.temporaryCredentials);
     res.render('index', {
-      query: req.query
+      user, credentials,
+      querystring
     });
   });
 
