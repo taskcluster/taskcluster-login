@@ -4,7 +4,7 @@ import persona from 'passport-persona'
 import Mozillians from 'mozillians-client'
 import User from './../user'
 
-class MozilliansLogin {
+class PersonaLogin {
   constructor(options) {
     assert(options, 'options are required');
     assert(options.cfg, 'options.cfg is required');
@@ -79,4 +79,4 @@ class MozilliansLogin {
 
 }
 
-module.exports = MozilliansLogin;
+module.exports = PersonaLogin;
