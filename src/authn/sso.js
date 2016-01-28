@@ -9,14 +9,12 @@ class SSOLogin {
     assert(options, 'options are required');
     assert(options.cfg, 'options.cfg is required');
     assert(options.cfg.sso, 'options.cfg.sso is required');
-    assert(options.cfg.sso.allowedGroups, 'options.cfg.sso.allowedGroups is required');
     assert(options.cfg.sso.issuer, 'options.cfg.sso.issuer is required');
     assert(options.cfg.sso.entryPoint, 'options.cfg.sso.entryPoint is required');
     assert(options.cfg.sso.certificate, 'options.cfg.sso.certificate is required');
-    assert(options.ldapService, 'options.ldapService is required');
+    assert(options.authorize, 'options.authorize is required');
 
-    this.allowedGroups = options.cfg.sso.allowedGroups;
-    this.ldapService = options.ldapService;
+    this.authorize = options.authorize;
 
     passport.use(new saml.Strategy({
       issuer: options.cfg.sso.issuer,
@@ -39,23 +37,11 @@ class SSOLogin {
   };
 
   async samlCallback(req, profile, done) {
+    console.log(this.authorize);
     try {
       let user = User.get(req);
-      user.ldapUser = profile['ldap-email'];
-
-      let posixGroups = await this.ldapService.posixGroups(profile['ldap-email']);
-      posixGroups.forEach(group => {
-        if (this.allowedGroups.indexOf(group) !== -1) {
-          user.addLDAPGroup(group);
-        }
-      });
-
-      profile['ldap-groups'].forEach(group => {
-        if (this.allowedGroups.indexOf(group) !== -1) {
-          user.addLDAPGroup(group);
-        }
-      });
-      done(null, user);
+      user.identity = 'sso/' + profile['ldap-email'];
+      this.authorize(user, done);
     } catch (err) {
       done(err, null);
     }

@@ -9,7 +9,6 @@ import config from 'taskcluster-lib-config'
 import bodyParser from 'body-parser'
 import User from './user'
 import querystring from 'querystring'
-import LDAPService from './ldapservice'
 import loader from 'taskcluster-lib-loader'
 
 require('source-map-support').install();
@@ -22,22 +21,29 @@ let load = loader({
     },
   },
 
-  ldapService: {
+  authorizers: {
     requires: ['cfg'],
     setup: async ({cfg}) => {
-      let ldapService = new LDAPService(cfg.ldap);
-      await ldapService.setup();
-      return ldapService
+      let authorizers = cfg.app.authorizers.map((name) => {
+        let Authz = require('./authz/' + name);
+        return new Authz({cfg});
+      });
+      await Promise.all(authorizers.map(authz => authz.setup()));
+      return authorizers;
     },
   },
 
   authenticators: {
-    requires: ['cfg', 'ldapService'],
-    setup: ({cfg, ldapService}) => {
+    requires: ['cfg', 'authorizers'],
+    setup: ({cfg, authorizers}) => {
       let authenticators = {};
+      let authorize = (user, done) => {
+        Promise.all(authorizers.map(authz => authz.authorize(user)))
+        .then(() => done(null, user), (err) => done(err, null));
+      }
       cfg.app.authenticators.forEach((name) => {
         let Authn = require('./authn/' + name);
-        authenticators[name] = new Authn({cfg, ldapService});
+        authenticators[name] = new Authn({cfg, authorize});
       });
       return authenticators;
     },
