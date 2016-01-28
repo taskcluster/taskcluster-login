@@ -1,3 +1,4 @@
+import express from 'express'
 import passport from 'passport'
 import assert from 'assert'
 import persona from 'passport-persona'
@@ -14,7 +15,6 @@ class PersonaLogin {
     assert(options.cfg.mozillians.apiKey, 'options.cfg.mozillians.apiKey is required');
     assert(options.cfg.mozillians.allowedGroups,
         'options.cfg.mozillians.allowedGroups is required');
-    assert(options.app, 'options.app is required');
 
     // Mozillians client
     this.mozillians = new Mozillians(options.cfg.mozillians.apiKey);
@@ -25,13 +25,16 @@ class PersonaLogin {
       audience: options.cfg.server.publicUrl,
       passReqToCallback: true
     }, this.personaCallback.bind(this)));
+  }
 
-    // TODO: pass a router so the login method can handle its own space
-    options.app.post('/login/persona', passport.authenticate('persona', {
+  router() {
+    let router = new express.Router();
+    router.post('/login', passport.authenticate('persona', {
       successRedirect: '/',
       failureRedirect: '/?err=mozillians-lookup',
       failureFlash: true
     }));
+    return router;
   }
 
   async personaCallback(req, email, done) {

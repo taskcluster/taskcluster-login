@@ -1,3 +1,4 @@
+import express from 'express'
 import saml from 'passport-saml'
 import passport from 'passport'
 import assert from 'assert'
@@ -12,7 +13,6 @@ class SSOLogin {
     assert(options.cfg.sso.issuer, 'options.cfg.sso.issuer is required');
     assert(options.cfg.sso.entryPoint, 'options.cfg.sso.entryPoint is required');
     assert(options.cfg.sso.certificate, 'options.cfg.sso.certificate is required');
-    assert(options.app, 'options.app is required');
     assert(options.ldapService, 'options.ldapService is required');
 
     this.allowedGroups = options.cfg.sso.allowedGroups;
@@ -20,19 +20,22 @@ class SSOLogin {
 
     passport.use(new saml.Strategy({
       issuer: options.cfg.sso.issuer,
-      path: '/login/sso',
+      path: '/sso/login',
       entryPoint: options.cfg.sso.entryPoint,
       cert: options.cfg.sso.certificate,
       skipRequestCompression: true,
       passReqToCallback: true
     }, this.samlCallback.bind(this)));
+  }
 
-    // TODO: pass a router so the login method can handle its own space
-    options.app.post('/login/sso', passport.authenticate('saml', {
+  router() {
+    let router = new express.Router();
+    router.post('/login', passport.authenticate('saml', {
       successRedirect: '/',
       failureRedirect: '/',
       failureFlash: true
     }));
+    return router;
   };
 
   async samlCallback(req, profile, done) {

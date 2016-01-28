@@ -74,8 +74,10 @@ let load = loader({
       passport.serializeUser((user, done) => done(null, user.serialize()));
       passport.deserializeUser((data, done) => done(null, User.deserialize(data)));
 
-      let personaLogin = new PersonaLogin({cfg, app});
-      let sslLogin = new SSOLogin({cfg, app, ldapService});
+      let personaLogin = new PersonaLogin({cfg});
+      app.use('/persona', personaLogin.router());
+      let ssoLogin = new SSOLogin({cfg, ldapService});
+      app.use('/sso', ssoLogin.router());
 
       // Add logout method
       app.post('/logout', (req, res) => {

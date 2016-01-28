@@ -42,7 +42,7 @@ html(lang='en')
           | Mozillians groups as you authenticate with each account.
         br
         if !user.hasMozillianUser()
-          form#persona-form(action='/login/persona', method='post')
+          form#persona-form(action='/persona/login', method='post')
             input#persona-assertion(type='hidden', name='assertion')
             button.btn.btn-primary#persona-signin(type='submit')
               i.glyphicon.glyphicon-log-in
@@ -67,7 +67,7 @@ html(lang='en')
             | You are signed in with
             b  Mozillians!
         if !user.hasLDAPUser()
-          form(action='/login/sso', method='post')
+          form(action='/sso/login', method='post')
             button.btn.btn-primary(type='submit')
               i.glyphicon.glyphicon-log-in
               | &nbsp;Sign-in with SSO
