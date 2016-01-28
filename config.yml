@@ -1,5 +1,8 @@
 Defaults:
   app:
+    authenticators:
+      - persona
+      - sso
     cookieSecrets: !env:list COOKIE_SECRETS
     allowedRedirectHosts:
       - localhost

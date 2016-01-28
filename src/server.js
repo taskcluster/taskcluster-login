@@ -7,8 +7,6 @@ import path from 'path'
 import session from 'cookie-session'
 import config from 'taskcluster-lib-config'
 import bodyParser from 'body-parser'
-import PersonaLogin from './authn/persona'
-import SSOLogin from './authn/sso'
 import User from './user'
 import querystring from 'querystring'
 import LDAPService from './ldapservice'
@@ -33,9 +31,21 @@ let load = loader({
     },
   },
 
-  app: {
+  authenticators: {
     requires: ['cfg', 'ldapService'],
     setup: ({cfg, ldapService}) => {
+      let authenticators = {};
+      cfg.app.authenticators.forEach((name) => {
+        let Authn = require('./authn/' + name);
+        authenticators[name] = new Authn({cfg, ldapService});
+      });
+      return authenticators;
+    },
+  },
+
+  app: {
+    requires: ['cfg', 'authenticators'],
+    setup: ({cfg, authenticators}) => {
       // Create application
       let app = express();
 
@@ -74,10 +84,10 @@ let load = loader({
       passport.serializeUser((user, done) => done(null, user.serialize()));
       passport.deserializeUser((data, done) => done(null, User.deserialize(data)));
 
-      let personaLogin = new PersonaLogin({cfg});
-      app.use('/persona', personaLogin.router());
-      let ssoLogin = new SSOLogin({cfg, ldapService});
-      app.use('/sso', ssoLogin.router());
+      // set up authenticators' sub-paths
+      _.forIn(authenticators, (authn, name) => {
+        app.use('/' + name, authn.router());
+      });
 
       // Add logout method
       app.post('/logout', (req, res) => {
