@@ -14,7 +14,6 @@ class MozilliansAuthorizer {
 
     this.mozillians = new Mozillians(options.cfg.mozillians.apiKey);
     this.allowedGroups = options.cfg.mozillians.allowedGroups;
-    this.mz_cfg = options.cfg.mozillians;
   }
 
   async setup() {
