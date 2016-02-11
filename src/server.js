@@ -108,24 +108,24 @@ let load = loader({
         app.use('/' + name, authn.router());
       });
 
-      // Add logout method
-      app.post('/logout', (req, res) => {
-        req.logout();
-        res.redirect('/');
-      });
-
       // Render index
       app.get('/', (req, res) => {
+        res.render('index', {
+          flash: req.flash(),
+        });
+      });
+
+      app.get('/to-tools', (req, res) => {
+        // generate temporary credentials for the user
         let user = User.get(req);
         let credentials = user.createCredentials(cfg.app.temporaryCredentials);
-        res.render('index', {
-          user, credentials,
-          querystring,
-          allowedHosts: cfg.app.allowedRedirectHosts,
-          query: req.query,
-          flash: req.flash(),
-          session: req.session,
-        });
+        credentials = querystring.stringify(credentials);
+
+        // forget everything we knew about this authentication..
+        req.logout();
+
+        // and redirect to the tools site
+        res.redirect('https://tools.taskcluster.net/login/?' + credentials);
       });
 
       return app;
