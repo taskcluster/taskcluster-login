@@ -52,10 +52,26 @@ class LDAPClient {
 
   search(base, options) {
     debug(`search(${base}, ${JSON.stringify(options)})`);
+    let entries = [];
     return new Promise((accept, reject) => this.client.search(
       base, options, (err, res) => {
       err ? reject(err) : accept(res);
-    }));
+    })).then((res) => {
+      return new Promise((accept, reject) => {
+        res.on('searchEntry', entry => {
+          entries.push(entry);
+        });
+        res.on('error', (err) => {
+          reject(err);
+        });
+        res.on('end', result => {
+          if (result.status !== 0) {
+            return reject(new Error('LDAP error, got status: ' + result.status));
+          }
+          return accept(entries);
+        });
+      });
+    });
   }
 
   dnForEmail(email) {
@@ -67,22 +83,10 @@ class LDAPClient {
       filter: '(&(objectClass=inetOrgPerson)(mail=' + email + '))',
       attributes: [],
       timeLimit: 10,
-    }).then((res) => {
-      return new Promise((accept, reject) => {
-        res.on('searchEntry', entry => {
-          userDn = entry.object.dn;
-        });
-        res.on('error', (err) => {
-          reject(err);
-        });
-        res.on('end', result => {
-          if (result.status !== 0) {
-            return reject(new Error('LDAP error, got status: ' + result.status));
-          }
-          debug("found", userDn);
-          return accept(userDn);
-        });
-      });
+    }).then((entries) => {
+      if (entries && entries.length === 1) {
+        return entries[0].object.dn;
+      }
     });
   }
 }

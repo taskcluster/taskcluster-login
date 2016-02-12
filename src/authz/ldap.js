@@ -45,22 +45,13 @@ class LDAPAuthorizer {
 
     debug(`ldap authorizing ${user.identity}`);
 
-    let addRolesForQuery = (res) => {
-      return new Promise((accept, reject) => {
-        res.on('searchEntry', entry => {
-          let group = entry.object.cn;
-          debug("..found", group);
-          if (this.allowedGroups.indexOf(group) !== -1) {
-            user.addRole('mozilla-group:' + group);
-          }
-        });
-        res.on('error', reject);
-        res.on('end', result => {
-          if (result.status !== 0) {
-            return reject(new Error('LDAP error, got status: ' + result.status));
-          }
-          return accept();
-        });
+    let addRolesForEntries = (entries) => {
+      entries.forEach((entry) => {
+        let group = entry.object.cn;
+        debug("..found", group);
+        if (this.allowedGroups.indexOf(group) !== -1) {
+          user.addRole('mozilla-group:' + group);
+        }
       });
     };
 
@@ -68,7 +59,7 @@ class LDAPAuthorizer {
     // since this connection was last used.
     await this.client.bind(this.user, this.password, async (client) => {
       debug(`enumerating posix groups for ${email}`);
-      await addRolesForQuery(await client.search(
+      addRolesForEntries(await client.search(
         "dc=mozilla", {
         scope: 'sub',
         filter: '(&(objectClass=posixGroup)(memberUid=' + email + '))',
@@ -83,7 +74,7 @@ class LDAPAuthorizer {
       }
 
       debug(`enumerating LDAP groups for ${userDn}`);
-      await addRolesForQuery(await client.search(
+      addRolesForEntries(await client.search(
         "dc=mozilla", {
         scope: 'sub',
         filter: '(&(objectClass=groupOfNames)(member=' + userDn + '))',
