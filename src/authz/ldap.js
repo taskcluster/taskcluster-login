@@ -45,10 +45,6 @@ class LDAPAuthorizer {
 
     debug(`ldap authorizing ${user.identity}`);
 
-    // always perform a bind, in case the client has disconnected
-    // since this connection was last used.
-    await this.client.bind(this.user, this.password);
-
     let addRolesForQuery = (res) => {
       return new Promise((accept, reject) => {
         res.on('searchEntry', entry => {
@@ -68,29 +64,33 @@ class LDAPAuthorizer {
       });
     };
 
-    debug(`enumerating posix groups for ${email}`);
-    await addRolesForQuery(await this.client.search(
-      "dc=mozilla", {
-      scope: 'sub',
-      filter: '(&(objectClass=posixGroup)(memberUid=' + email + '))',
-      attributes: ['cn'],
-      timeLimit: 10,
-    }));
+    // always perform a bind, in case the client has disconnected
+    // since this connection was last used.
+    await this.client.bind(this.user, this.password, async (client) => {
+      debug(`enumerating posix groups for ${email}`);
+      await addRolesForQuery(await client.search(
+        "dc=mozilla", {
+        scope: 'sub',
+        filter: '(&(objectClass=posixGroup)(memberUid=' + email + '))',
+        attributes: ['cn'],
+        timeLimit: 10,
+      }));
 
-    let userDn = await this.client.dnForEmail(email);
-    if (!userDn) {
-      debug(`no user found for ${email}; skipping LDAP groups`);
-      return;
-    }
+      let userDn = await client.dnForEmail(email);
+      if (!userDn) {
+        debug(`no user found for ${email}; skipping LDAP groups`);
+        return;
+      }
 
-    debug(`enumerating LDAP groups for ${userDn}`);
-    await addRolesForQuery(await this.client.search(
-      "dc=mozilla", {
-      scope: 'sub',
-      filter: '(&(objectClass=groupOfNames)(member=' + userDn + '))',
-      attributes: ['cn'],
-      timeLimit: 10,
-    }));
+      debug(`enumerating LDAP groups for ${userDn}`);
+      await addRolesForQuery(await client.search(
+        "dc=mozilla", {
+        scope: 'sub',
+        filter: '(&(objectClass=groupOfNames)(member=' + userDn + '))',
+        attributes: ['cn'],
+        timeLimit: 10,
+      }));
+    });
   }
 };
 

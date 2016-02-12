@@ -50,8 +50,8 @@ class LDAPLogin {
 
   async localCallback(req, email, password) {
     // bind as the bind user to convert email to DN
-    await this.client.bind(this.user, this.password);
-    let userDn = await this.client.dnForEmail(email);
+    let userDn = await this.client.bind(this.user, this.password,
+        (client) => client.dnForEmail(email));
     if (!userDn) {
       return this.authFail();
     }
@@ -67,7 +67,6 @@ class LDAPLogin {
     let user = User.get(req);
     user.identity = 'mozilla-ldap/' + email;
     await this.authorize(user);
-    console.log(user);
     return user;
   }
 }
