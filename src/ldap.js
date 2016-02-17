@@ -46,7 +46,7 @@ class LDAPClient {
         }
       // carefully send errors to the caller while leaving the lock
       // Promise resolved
-      }).then((res) => accept(res)).catch(err => reject(err))
+      }).then(accept, reject)
     })
   }
 
