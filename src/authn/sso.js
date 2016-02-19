@@ -29,7 +29,7 @@ class SSOLogin {
   router() {
     let router = new express.Router();
     router.post('/login', passport.authenticate('saml', {
-      successRedirect: '/',
+      successRedirect: '/to-tools',
       failureRedirect: '/',
       failureFlash: true
     }));

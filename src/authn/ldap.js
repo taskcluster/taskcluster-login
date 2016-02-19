@@ -35,7 +35,7 @@ class LDAPLogin {
   router() {
     let router = new express.Router();
     router.post('/login', passport.authenticate('local', {
-      successRedirect: '/',
+      successRedirect: '/to-tools',
       failureRedirect: '/',
       failureFlash: true
     }));

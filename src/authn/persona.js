@@ -25,7 +25,7 @@ class PersonaLogin {
   router() {
     let router = new express.Router();
     router.post('/login', passport.authenticate('persona', {
-      successRedirect: '/',
+      successRedirect: '/to-tools',
       failureRedirect: '/',
       failureFlash: true
     }));
