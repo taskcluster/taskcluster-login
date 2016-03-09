@@ -35,7 +35,12 @@ export default class User {
   }
 
   scopes() {
-    return this.roles.map(role => "assume:" + role);
+    let scopes = this.roles.map(role => "assume:" + role);
+    // add permission to manage scopes prefixed by the identity
+    ['create-client', 'delete-client', 'update-client', 'reset-access-token'].forEach(v => {
+      scopes.push("auth:" + v + ":" + this.identity + "/*");
+    });
+    return scopes;
   }
 
   createCredentials(options) {
@@ -44,11 +49,6 @@ export default class User {
     if (scopes.length === 0) {
       return null;
     }
-
-    // add permission to manage scopes prefixed by the identity
-    ['create-client', 'delete-client', 'update-client', 'reset-access-token'].forEach(v => {
-      scopes.push("auth:" + v + ":" + this.identity + "/*");
-    });
 
     return taskcluster.createTemporaryCredentials({
       clientId: this.identity,
