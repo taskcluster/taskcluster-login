@@ -31,47 +31,59 @@ class LDAPClient {
    * the connection cannot be re-bound.  The client is passed to the operations
    * function.  You can call other methods of this client from there.
    */
-  bind(user, password, operations) {
-    return new Promise((accept, reject) => {
-      this.lock = this.lock.then(async() => {
-        // perform the bind
-        debug(`bind(${user}, <password>)`);
-        await new Promise((accept, reject) => this.client.bind(
-          user, password, err => {
-          err ? reject(err) : accept();
-        }));
-
-        if (operations) {
-          return await operations(this);
+  async bind(user, password, operations) {
+    let attempts = 0;
+    while (true) {
+      attempts++;
+      try {
+        await this.lock = this.lock.then(async() => {
+          // perform the bind
+          debug(`bind(${user}, <password>)`);
+          await new Promise((accept, reject) => this.client.bind(
+            user, password, err => {
+            err ? reject(err) : accept();
+          }));
+  
+          if (operations) {
+            return await operations(this);
+          }
+        // carefully send errors to the caller while leaving the lock
+        // Promise resolved
+        })
+      } catch (err) {
+        if (attempts > 5) {
+          throw err;
         }
-      // carefully send errors to the caller while leaving the lock
-      // Promise resolved
-      }).then(accept, reject)
-    })
+      }
+    }
   }
 
-  search(base, options) {
+  async search(base, options) {
     debug(`search(${base}, ${JSON.stringify(options)})`);
-    let entries = [];
-    return new Promise((accept, reject) => this.client.search(
-      base, options, (err, res) => {
-      err ? reject(err) : accept(res);
-    })).then((res) => {
-      return new Promise((accept, reject) => {
-        res.on('searchEntry', entry => {
-          entries.push(entry);
+    let attempts = 0;
+    while (true) {
+      attempts++;
+      try {
+        let entries = [];
+        let res = await new Promise((accept, reject) => this.client.search(
+          base, options, (err, res) => {
+          err ? reject(err) : accept(res);
+        }));
+        let result = await new Promise((accept, reject) => {
+          res.on('searchEntry', entry => entries.push(entry));
+          res.on('error', reject);
+          res.on('end', accept);
         });
-        res.on('error', (err) => {
-          reject(err);
-        });
-        res.on('end', result => {
-          if (result.status !== 0) {
-            return reject(new Error('LDAP error, got status: ' + result.status));
-          }
-          return accept(entries);
-        });
-      });
-    });
+        if (result.status !== 0) {
+          throw new Error('LDAP error, got status: ' + result.status);
+        }
+        return entries;
+      } catch (err) {
+        if (attempts > 5) {
+          throw err;
+        }
+      }
+    }
   }
 
   dnForEmail(email) {
