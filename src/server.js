@@ -14,7 +14,7 @@ import taskcluster from 'taskcluster-client'
 import flash from 'connect-flash'
 import scanner from './scanner'
 import v1 from './v1'
-import tc_lib_app from 'taskcluster-lib-app'
+import tcApp from 'taskcluster-lib-app'
 import validator from 'taskcluster-lib-validate'
 import raven from 'raven'
 
@@ -109,7 +109,7 @@ let load = loader({
     requires: ['cfg', 'authenticators', 'router'],
     setup: ({cfg, authenticators, router}) => {
       // Create application
-      let app = tc_lib_app(cfg.server);
+      let app = tcApp(cfg.server);
 
       // Setup API
       app.use('/v1', router);
