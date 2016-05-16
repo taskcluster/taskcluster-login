@@ -42,7 +42,13 @@
     "taskcluster-lib-loader": "^0.1.1",
     "taskcluster-lib-rules": "^1.0.3",
     "taskcluster-lib-scopes": "^0.8.8",
-    "taskcluster-lib-testing": "^1.0.0",
     "taskcluster-lib-validate": "^1.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.4.5",
+    "taskcluster-lib-testing": "^1.0.0"
+  },
+  "engines": {
+    "node": "5"
   }
 }
