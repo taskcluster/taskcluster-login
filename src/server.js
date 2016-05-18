@@ -14,6 +14,7 @@ import taskcluster from 'taskcluster-client'
 import flash from 'connect-flash'
 import scanner from './scanner'
 import Authorizer from './authz'
+import PersonaVerifier from './persona'
 import v1 from './v1'
 import tcApp from 'taskcluster-lib-app'
 import validator from 'taskcluster-lib-validate'
@@ -35,6 +36,15 @@ let load = loader({
       let authorizer = new Authorizer(cfg);
       await authorizer.setup();
       return authorizer;
+    },
+  },
+
+  personaVerifier: {
+    requires: ['cfg'],
+    setup: ({cfg}) => {
+      return new PersonaVerifier({
+        allowedAudiences: cfg.persona.allowedAudiences,
+      });
     },
   },
 
@@ -84,8 +94,8 @@ let load = loader({
   },
 
   router: {
-    requires: ['cfg', 'validator', 'raven'],
-    setup: ({cfg, validator, raven}) => {
+    requires: ['cfg', 'validator', 'raven', 'authorizer', 'personaVerifier'],
+    setup: ({cfg, validator, raven, authorizer, personaVerifier}) => {
       return v1.setup({
         context: {},
         validator,
@@ -95,6 +105,11 @@ let load = loader({
         referencePrefix:  'login/v1/api.json',
         aws:              cfg.aws,
         raven:            raven,
+        context: {
+          temporaryCredentials: cfg.app.temporaryCredentials,
+          authorizer,
+          personaVerifier,
+        }
       });
     },
   },
