@@ -13,6 +13,7 @@ import loader from 'taskcluster-lib-loader'
 import taskcluster from 'taskcluster-client'
 import flash from 'connect-flash'
 import scanner from './scanner'
+import Authorizer from './authz'
 import v1 from './v1'
 import tcApp from 'taskcluster-lib-app'
 import validator from 'taskcluster-lib-validate'
@@ -28,32 +29,24 @@ let load = loader({
     },
   },
 
-  authorizers: {
+  authorizer: {
     requires: ['cfg'],
     setup: async ({cfg}) => {
-      let authorizers = cfg.app.authorizers.map((name) => {
-        let Authz = require('./authz/' + name);
-        return new Authz({cfg});
-      });
-      await Promise.all(authorizers.map(authz => authz.setup()));
-      return authorizers;
+      let authorizer = new Authorizer(cfg);
+      await authorizer.setup();
+      return authorizer;
     },
   },
 
   authenticators: {
-    requires: ['cfg', 'authorizers'],
-    setup: ({cfg, authorizers}) => {
+    requires: ['cfg', 'authorizer'],
+    setup: ({cfg, authorizer}) => {
       let authenticators = {};
 
       // carry out the authorization process, either with a done callback
       // or returning a promise
       let authorize = (user, done) => {
-        let identityProviderId = user.identityProviderId;
-        let promise = Promise.all(authorizers.map(authz => {
-          if (authz.identityProviders.indexOf(identityProviderId) !== -1) {
-            return authz.authorize(user)
-          }
-        }));
+        let promise = authorizer.authorize(user);
         if (done) {
           promise.then(() => done(null, user), (err) => done(err, null));
         } else {
@@ -186,9 +179,9 @@ let load = loader({
   },
 
   scanner: {
-    requires: ['cfg', 'authorizers'],
-    setup: async ({cfg, authorizers}) => {
-      await scanner(cfg, authorizers);
+    requires: ['cfg', 'authorizer'],
+    setup: async ({cfg, authorizer}) => {
+      await scanner(cfg, authorizer);
       // the LDAP connection is still open, so we must exit
       // explicitly or node will wait forever for it to die.
       process.exit(0);
