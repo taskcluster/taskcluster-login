@@ -2397,9 +2397,9 @@
       "resolved": "https://registry.npmjs.org/taskcluster-lib-config/-/taskcluster-lib-config-0.9.1.tgz"
     },
     "taskcluster-lib-loader": {
-      "version": "0.1.1",
-      "from": "taskcluster-lib-loader@>=0.1.1 <0.2.0",
-      "resolved": "https://registry.npmjs.org/taskcluster-lib-loader/-/taskcluster-lib-loader-0.1.1.tgz"
+      "version": "1.0.0",
+      "from": "taskcluster-lib-loader@1.0.0",
+      "resolved": "https://registry.npmjs.org/taskcluster-lib-loader/-/taskcluster-lib-loader-1.0.0.tgz"
     },
     "taskcluster-lib-rules": {
       "version": "1.0.5",
