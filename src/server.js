@@ -210,6 +210,7 @@ let load = loader({
       let email = process.argv[3];
       if (!email) {
         console.error("Specify an email address on the command line");
+        process.exit(1);
         return;
       }
 
@@ -220,6 +221,7 @@ let load = loader({
 
       if (!userDn) {
         console.error(`no user found for ${email}; skipping LDAP groups`);
+        process.exit(1);
         return;
       }
 
@@ -233,6 +235,8 @@ let load = loader({
       entries.forEach(entry => {
         console.log(entry.object.cn);
       });
+
+      process.exit(0);
     },
   },
 }, ['profile']);
