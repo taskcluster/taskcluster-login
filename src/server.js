@@ -204,6 +204,7 @@ let load = loader({
     },
   },
 
+  // utility function to show LDAP groups for a user
   'show-ldap-user': {
     requires: ['cfg'],
     setup: async ({cfg}) => {
@@ -232,9 +233,9 @@ let load = loader({
         attributes: ['cn'],
         timeLimit: 10,
       });
-      entries.forEach(entry => {
-        console.log(entry.object.cn);
-      });
+      let groups = entries.map(entry => entry.object.cn);
+      groups.sort();
+      groups.forEach(gp => console.log(gp));
 
       process.exit(0);
     },
