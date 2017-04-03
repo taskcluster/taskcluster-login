@@ -20,6 +20,9 @@ import tcApp from 'taskcluster-lib-app'
 import validator from 'taskcluster-lib-validate'
 import raven from 'raven'
 import docs from 'taskcluster-lib-docs'
+import auth0js from 'auth0-js'
+var jwt = require('express-jwt');
+var jwks = require('jwks-rsa');
 
 require('source-map-support').install();
 
@@ -171,6 +174,49 @@ let load = loader({
       app.post('/logout', (req, res) => {
         req.logout();
         res.redirect('/');
+      });
+
+      app.get('/some-tool', (req, res) => {
+        return res.render('some-tool');
+      });
+
+      var jwtCheck = jwt({
+        secret: jwks.expressJwtSecret({
+          cache: true,
+          rateLimit: true,
+          jwksRequestsPerMinute: 5,
+          jwksUri: `https://${cfg.auth0api.domain}/.well-known/jwks.json`,
+        }),
+        audience: cfg.auth0api.apiAudience,
+        issuer: `https://${cfg.auth0api.domain}/`,
+        algorithms: ['RS256']
+      });
+
+      app.get('/creds', jwtCheck, (req, res) => {
+        let access_token = req.headers.authorization.split(' ')[1];
+
+        let a0 = new auth0js.Management({
+          domain: cfg.auth0api.domain,
+          token: cfg.auth0api.mgmtApiToken,
+        });
+        var result = {};
+
+        a0.getUser(req.user.sub, (error, user) => {
+          if (error) {
+            return res.status(400).json(error);
+          }
+          var scopes = [];
+          if (user.groups) {
+            scopes = user.groups.map(g => `assume:mozilla-group:${g}`);
+          }
+          var credentials = {
+            clientId: `email/${user.email}`,
+            accessToken: 'hunter1',
+            certificate: JSON.stringify({scopes}),
+          };
+
+          res.status(200).json({profile: user, credentials});
+        });
       });
 
       // Render index

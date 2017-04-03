@@ -1,0 +1,24 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='utf-8')
+    title TaskCluster Login
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    script(src="/assets/jwt-decode.js")
+  body
+    h1 Taskcluster Login API proof-of-concept
+    p 
+      | This page represents a third-party client that wishes to know who you are and make TC API calls on your behalf.
+    p
+      | This is accomplished by means of Auth0's API authentication flow.  There are a few components:
+      ul
+        li Auth0 (the "Authorization Server")
+        li Some-Tool (the "Relying Party", registered as a client in Auth0)
+        li The Login API (registered as an API in Auth0, and as an Auth0 client that can access the Auth0 management API)
+        li The TaskCluster API (unkonwn to Auth0, and not accepting JWT tokens for authentication)
+    h2 Login Flow Steps
+    p
+      | These are the steps in the login flow:
+      ul#steps
+
+    script(src="/assets/some-tool.js")
