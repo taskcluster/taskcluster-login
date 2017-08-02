@@ -188,6 +188,10 @@ let load = loader({
         app.use('/' + name, authn.router());
       });
 
+      app.get('/some-tool', (req, res) => {
+        return res.render('some-tool');
+      });
+
       // Add logout method
       app.post('/logout', (req, res) => {
         req.logout();

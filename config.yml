@@ -72,6 +72,10 @@ Profiles:
   production:
     handlers:
       mozilla-auth0:
+        domain:         !env AUTH0_DOMAIN
+        apiAudience:    !env AUTH0_API_AUDIENCE
+        clientId:       !env AUTH0_CLIENT_ID
+        clientSecret:   !env AUTH0_CLIENT_SECRET
     server:
       forceSSL: true
     app:

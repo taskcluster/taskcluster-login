@@ -61,6 +61,5 @@ api.declare({
 
   // create and return temporary credentials
   let credentials = user.createCredentials(this.cfg.app.temporaryCredentials);
-  console.log(credentials);
   return res.reply(credentials);
 });
