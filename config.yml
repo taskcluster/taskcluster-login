@@ -70,11 +70,15 @@ Defaults:
     publicUrl:  !env PUBLIC_URL
 Profiles:
   production:
+    handlers:
+      mozilla-auth0:
     server:
       forceSSL: true
     app:
       publishMetaData:  true
   test:
+    handlers:
+      test:
     app:
       cookieSecrets: ['Shhh']
       temporaryCredentials:
@@ -113,6 +117,8 @@ Profiles:
         CGq4KkDUXXTIHRl+f3VNDPJBjxVZBpkpYEdNFnhcmWADwNgtmYwW4rYgb4s7VaGA5Hg75Z3NPlR4
         Brq4s05ixFJAciflA4b7mnic
   ngrok:
+    handlers:
+      test:
     app:
       cookieSecrets: ['Shhh']
       temporaryCredentials:

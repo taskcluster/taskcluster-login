@@ -48,6 +48,8 @@
   },
   "devDependencies": {
     "mocha": "^3.0.2",
+    "superagent": "^3.5.2",
+    "superagent-promise": "^1.1.0",
     "taskcluster-lib-testing": "^1.0.0"
   },
   "engine-strict": true,
