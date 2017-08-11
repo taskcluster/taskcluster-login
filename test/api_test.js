@@ -1,4 +1,4 @@
-require('mocha')
+require('mocha');
 
 suite('API', function() {
   var _           = require('lodash');
@@ -9,8 +9,8 @@ suite('API', function() {
 
   helper.setup();
 
-  suite("credentialsFromAccessToken", function() {
-    test("returns 400 for a call without a header", async function() {
+  suite('credentialsFromAccessToken', function() {
+    test('returns 400 for a call without a header', async function() {
       try {
         await helper.login.oidcCredentials('test');
       } catch (e) {
@@ -21,7 +21,7 @@ suite('API', function() {
       throw new Error('should have failed');
     });
 
-    test("returns credentials for 'test' provider", async function() {
+    test('returns credentials for "test" provider', async function() {
       let res = await request
         .get(helper.baseUrl + '/oidc-credentials/test')
         .set('Authorization', 'Bearer let-me-in');
@@ -33,8 +33,8 @@ suite('API', function() {
 
   });
 
-  suite("ping", function() {
-    test("pings", async () => {
+  suite('ping', function() {
+    test('pings', async() => {
       await helper.login.ping();
     });
   });
