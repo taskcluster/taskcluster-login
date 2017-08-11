@@ -44,7 +44,6 @@
     "passport-saml": "^0.15.0",
     "source-map-support": "^0.4.2",
     "superagent": "^3.5.2",
-    "superagent-promise": "^1.1.0",
     "taskcluster-client": "^2.5.2",
     "taskcluster-lib-api": "^3.2.2",
     "taskcluster-lib-app": "^1.0.0",

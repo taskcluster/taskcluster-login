@@ -3806,10 +3806,6 @@ superagent-promise@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/superagent-promise/-/superagent-promise-0.2.0.tgz#91c77f4cb0c9cf41beeb917d8add697f6d15caea"
 
-superagent-promise@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/superagent-promise/-/superagent-promise-1.1.0.tgz#baf22d8bbdd439a9b07dd10f8c08f54fe2503533"
-
 superagent@0.18.2, superagent@^0.18.2:
   version "0.18.2"
   resolved "https://registry.yarnpkg.com/superagent/-/superagent-0.18.2.tgz#9afc6276a9475f4bdcd535ac6a0685ebc4b560eb"
@@ -4012,7 +4008,7 @@ taskcluster-lib-loader@^1.0.0:
     promise "^7.0.4"
     topo-sort "^1.0.0"
 
-taskcluster-lib-monitor@^:
+taskcluster-lib-monitor@^4.6.3:
   version "4.6.3"
   resolved "https://registry.yarnpkg.com/taskcluster-lib-monitor/-/taskcluster-lib-monitor-4.6.3.tgz#85507888b2a1e1bbefbf17a70ff527441c668a36"
   dependencies:

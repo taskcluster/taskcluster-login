@@ -6,8 +6,7 @@ import expressJwt from 'express-jwt';
 import jwks from 'jwks-rsa';
 import Debug from 'debug';
 import auth0js from 'auth0-js';
-
-const request = require('superagent-promise')(require('superagent'), Promise);
+import request from 'superagent';
 
 const debug = Debug('handlers.mozilla-auth0');
 
