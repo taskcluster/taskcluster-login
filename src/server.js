@@ -18,7 +18,7 @@ import v1 from './v1';
 import LDAPClient from './ldap';
 import tcApp from 'taskcluster-lib-app';
 import validator from 'taskcluster-lib-validate';
-import raven from 'raven';
+import monitor from 'taskcluster-lib-monitor';
 import docs from 'taskcluster-lib-docs';
 
 require('source-map-support').install();
@@ -88,14 +88,14 @@ let load = loader({
     },
   },
 
-  raven: {
-    requires: ['cfg'],
-    setup: ({cfg}) => {
-      if (cfg.raven.sentryDSN) {
-        return new raven.Client(cfg.raven.sentryDSN);
-      }
-      return null;
-    },
+  monitor: {
+    requires: ['process', 'profile', 'cfg'],
+    setup: ({process, profile, cfg}) => monitor({
+      project: 'taskcluster-login',
+      credentials: cfg.credentials,
+      mock: profile !== 'production',
+      process,
+    }),
   },
 
   validator: {
@@ -110,8 +110,8 @@ let load = loader({
   },
 
   router: {
-    requires: ['cfg', 'validator', 'raven', 'handlers'],
-    setup: ({cfg, validator, raven, handlers}) => {
+    requires: ['cfg', 'validator', 'monitor', 'handlers'],
+    setup: ({cfg, validator, monitor, handlers}) => {
       return v1.setup({
         context: {},
         validator,
@@ -120,7 +120,7 @@ let load = loader({
         baseUrl:          cfg.server.publicUrl + '/v1',
         referencePrefix:  'login/v1/api.json',
         aws:              cfg.aws,
-        raven:            raven,
+        monitor:          monitor.prefix('api'),
         context:          {cfg, handlers},
       });
     },
@@ -281,11 +281,12 @@ let load = loader({
       process.exit(0);
     },
   },
-}, ['profile']);
+}, ['profile', 'process']);
 
 if (!module.parent) {
   load(process.argv[2], {
     profile: process.env.NODE_ENV,
+    process: process.argv[2],
   }).catch(err => {
     console.log('Server crashed: ' + err.stack);
     process.exit(1);
