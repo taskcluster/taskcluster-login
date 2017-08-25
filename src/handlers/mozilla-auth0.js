@@ -94,11 +94,15 @@ class Handler {
     // for the moment, we require the `full-user-credentials` scope, because
     // that's the only one.  This allows us to later add other scopes and
     // deprecate this one.
+      console.log('HERE 3.1 ' + JSON.stringify(req.user.scope));
     let scopes = req.user.scope ? req.user.scope.split(' ') : [];
+      console.log('HERE 3.15 ' + JSON.stringify(scopes));
     if (scopes.includes('full-user-credentials')) {
+      console.log('HERE 3.2');
       debug('request did not have the `full-user-credentials` scope');
       return;
     }
+      console.log('HERE 3.3');
 
     let a0 = await this.getManagementApi();
     let profile = await new Promise((resolve, reject) =>
