@@ -75,29 +75,38 @@ class Handler {
   }
 
   async userFromRequest(req, res) {
+    console.log('userFromRequest');
+    debug('userFromRequest');
     // check the JWT's validity, setting req.user if sucessful
     try {
       await new Promise((resolve, reject) =>
         this.jwtCheck(req, res, (err) => err ? reject(err) : resolve()));
     } catch (err) {
       debug(`error validating jwt: ${err}`);
+      console.log('HERE 1');
       return;
     }
+      console.log('HERE 2');
 
     debug(`received valid access_token for subject ${req.user.sub}`);
+      console.log('HERE 3');
 
     let a0 = await this.getManagementApi();
     let profile = await new Promise((resolve, reject) =>
       a0.getUser(req.user.sub, (err, prof) => err ? reject(err) : resolve(prof)));
 
+      console.log('HERE 4');
     if (!profile.email_verified) {
       debug('profile.email is not verified; ignoring profile');
+      console.log('HERE 5');
       return;
     }
+      console.log('HERE 6');
 
     let user = new User();
     user.identity = 'mozilla-auth0/' + profile.email;
     user.expires = new Date(req.user.exp * 1000);
+      console.log('HERE 7');
 
     // TODO: add scopes based on profile; waiting on profile rollout and documentation
 
