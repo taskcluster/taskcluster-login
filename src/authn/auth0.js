@@ -75,6 +75,7 @@ class Auth0Login {
 
   // for the moment, we *only* support email login with Auth0.
   auth0Callback(accessToken, refreshToken, extraParams, profile, done) {
+    console.log(profile);
     try {
       let user = new User();
       if (!profile._json.email_verified) {
