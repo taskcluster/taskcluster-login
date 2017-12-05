@@ -15,7 +15,6 @@
     "test": "mocha test/*_test.js"
   },
   "dependencies": {
-    "assume": "^1.5.1",
     "auth0-js": "^8.9.1",
     "body-parser": "^1.17.2",
     "browserid-verify": "^0.1.2",
@@ -48,6 +47,7 @@
     "taskcluster-lib-validate": "^3.0.1"
   },
   "devDependencies": {
+    "assume": "^1.5.2",
     "mocha": "^3.0.2",
     "taskcluster-lib-testing": "^1.0.0"
   },
