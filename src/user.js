@@ -1,8 +1,8 @@
-import taskcluster from 'taskcluster-client';
-import _ from 'lodash';
-import assert from 'assert';
+const taskcluster = require('taskcluster-client');
+const _ = require('lodash');
+const assert = require('assert');
 
-export default class User {
+class User {
   constructor() {
     this._identity = null;
     this.roles = [];
@@ -96,3 +96,5 @@ export default class User {
     return new User();
   }
 };
+
+module.exports = User;

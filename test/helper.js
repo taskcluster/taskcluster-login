@@ -1,10 +1,10 @@
-import taskcluster from 'taskcluster-client';
-import assume from 'assume';
-import testing from 'taskcluster-lib-testing';
-import v1 from '../lib/v1';
-import load from '../lib/server';
-import config from 'taskcluster-lib-config';
-import _ from 'lodash';
+const taskcluster = require('taskcluster-client');
+const assume = require('assume');
+const testing = require('taskcluster-lib-testing');
+const v1 = require('../src/v1');
+const load = require('../src/server');
+const config = require('taskcluster-lib-config');
+const _ = require('lodash');
 
 var cfg = config({profile: 'test'});
 

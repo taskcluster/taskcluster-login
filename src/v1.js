@@ -1,6 +1,6 @@
-import API from 'taskcluster-lib-api';
-import User from './user';
-import _ from 'lodash';
+const API = require('taskcluster-lib-api');
+const User = require('./user');
+const _ = require('lodash');
 
 var api = new API({
   title:         'Login API',
