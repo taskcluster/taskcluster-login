@@ -14,7 +14,7 @@ export default class User {
 
   set identity(identity) {
     assert(identity.split('/').length == 2,
-        'identity must have exactly one '/' character');
+      'identity must have exactly one '/' character');
     this._identity = identity;
     // always reset roles when changing identity
     this.roles = [];

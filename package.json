@@ -11,9 +11,9 @@
   },
   "scripts": {
     "compile": "babel-compile -p taskcluster src:lib test:.test",
-    "pretest": "npm run compile",
-    "test": "mocha .test/lint.js .test/*_test.js",
-    "postinstall": "yarn run compile"
+    "lint": "eslint src/*.js test/*.js",
+    "pretest": "yarn lint && npm run compile",
+    "test": "mocha .test/*_test.js"
   },
   "dependencies": {
     "assume": "^1.5.1",
@@ -26,8 +26,7 @@
     "connect-flash": "^0.1.1",
     "cookie-session": "^2.0.0-alpha.1",
     "debug": "^3.0.0",
-    "eslint-config-taskcluster": "^2.0.0",
-    "eslint-plugin-taskcluster": "^1.0.2",
+    "eslint-config-taskcluster": "^3.0.0",
     "express": "^4.15.4",
     "express-jwt": "^5.3.0",
     "express-sslify": "^1.1.0",

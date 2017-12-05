@@ -35,7 +35,7 @@ helper.setup = function(options) {
   };
 
   // Setup before tests
-  suiteSetup(async() => {
+  suiteSetup(async () => {
     testing.fakeauth.start({
       'test-client': ['*'],
     });
@@ -65,14 +65,14 @@ helper.setup = function(options) {
   });
 
   // Setup before each test
-  setup(async() => {
+  setup(async () => {
     helper.authorizer.identitiesSeen = [];
     // Setup client with all scopes
     helper.scopes();
   });
 
   // Cleanup after tests
-  suiteTeardown(async() => {
+  suiteTeardown(async () => {
     // Kill webServer
     if (webServer) {
       await webServer.terminate();
