@@ -148,6 +148,10 @@ class Handler {
       return;
     }
 
+    if (profile.app_metadata && profile.app_metadata.groups) {
+      profile.app_metadata.groups.map(group => user.addGroup(group));
+    }
+
     return user;
   }
 }

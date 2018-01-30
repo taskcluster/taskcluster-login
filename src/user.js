@@ -6,6 +6,7 @@ class User {
   constructor() {
     this._identity = null;
     this.roles = [];
+    this.groups = [];
   }
 
   get identity() {
@@ -33,6 +34,10 @@ class User {
     if (this.roles.indexOf(role) === -1) {
       this.roles.push(role);
     }
+  }
+
+  addGroup(group) {
+    this.groups.push(group);
   }
 
   scopes() {
@@ -73,6 +78,7 @@ class User {
       version:  1,
       identity: this._identity,
       roles:    this.roles,
+      groups:   this.groups,
     };
   }
 
@@ -82,7 +88,9 @@ class User {
     if (data.version === 1) {
       user._identity = data.identity;
       user.roles = data.roles || [];
+      user.groups = data.groups || [];
     }
+
     return user;
   }
 
