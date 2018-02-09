@@ -32,31 +32,6 @@ let load = loader({
     },
   },
 
-  // TODO: unused
-  authenticators: {
-    requires: ['cfg', 'authorizer'],
-    setup: ({cfg, authorizer}) => {
-      let authenticators = {};
-
-      // carry out the authorization process, either with a done callback
-      // or returning a promise
-      let authorize = (user, done) => {
-        let promise = authorizer.authorize(user);
-        if (done) {
-          promise.then(() => done(null, user), (err) => done(err, null));
-        } else {
-          return promise;
-        }
-      };
-
-      cfg.app.authenticators.forEach((name) => {
-        let Authn = require('./authn/' + name);
-        authenticators[name] = new Authn({cfg, authorize});
-      });
-      return authenticators;
-    },
-  },
-
   handlers: {
     requires: ['cfg'],
     setup: ({cfg}) => {
