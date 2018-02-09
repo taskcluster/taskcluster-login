@@ -5,7 +5,6 @@ Defaults:
     authorizers:
       - ldap
       - mozillians
-    cookieSecrets: !env:list COOKIE_SECRETS
     allowedRedirectHosts:
       - localhost
       - tools.taskcluster.net
@@ -79,7 +78,6 @@ Profiles:
     handlers:
       test:
     app:
-      cookieSecrets: ['Shhh']
       temporaryCredentials:
         credentials:
           clientId:     'dummy'
@@ -98,7 +96,6 @@ Profiles:
     handlers:
       test:
     app:
-      cookieSecrets: ['Shhh']
       temporaryCredentials:
         credentials:
           clientId:     'dummy'
