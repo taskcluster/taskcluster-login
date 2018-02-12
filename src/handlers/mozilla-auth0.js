@@ -74,6 +74,15 @@ class Handler {
     return this._managementApi;
   }
 
+  async profileFromIdentity(urlEncodedIdentity) {
+    const userId = decodeURIComponent(urlEncodedIdentity);
+    const a0 = await this.getManagementApi();
+    const profile = new Promise((resolve, reject) =>
+      a0.getUser(userId, (err, prof) => err ? reject(err) : resolve(prof)));
+
+    return profile;
+  }
+
   async userFromRequest(req, res) {
     // check the JWT's validity, setting req.user if sucessful
     try {
@@ -95,64 +104,97 @@ class Handler {
       return;
     }
 
-    let a0 = await this.getManagementApi();
-    let profile = await new Promise((resolve, reject) =>
-      a0.getUser(req.user.sub, (err, prof) => err ? reject(err) : resolve(prof)));
+    const profile = await this.profileFromIdentity(req.user.sub);
 
     if ('active' in profile && !profile.active) {
       debug('user is not active; rejecting');
       return;
     }
 
-    let user = this.userFromProfile(profile);
+    const user = this.userFromProfile(profile);
     user.expires = new Date(req.user.exp * 1000);
+
+    return user;
+  }
+
+  isIdentityProviderRecognized({provider, connection}) {
+    if (
+      provider === 'ad' && connection === 'Mozilla-LDAP' ||
+      // The 'email' connection corresponds to a passwordless login.
+      provider === 'email' && connection === 'email' ||
+      provider === 'google-oauth2' && connection === 'google-oauth2' ||
+      provider === 'github' && connection === 'github'
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  async userFromIdentity(urlEncodedIdentity) {
+    const profile = await this.profileFromIdentity(urlEncodedIdentity);
+    const user = this.userFromProfile(profile);
+
     return user;
   }
 
   userFromProfile(profile) {
-    let user = new User();
+    const user = new User();
 
-    // we recognize a few different kinds of 'identities' that auth0 can send
-    // our way.  Each of these translates into a different identityProviderId,
-    // which authorizers will later use to figure out what scopes this user
-    // has.  We do not ever expect to have more than one identity in this array,
-    // in a practical sense.
-    for (let {provider, connection} of profile.identities) {
-      // The 'Mozilla-LDAP' connection corresponds to an LDAP login. For this
-      // login, emails are a unique identifier
-      if (provider === 'ad' && connection === 'Mozilla-LDAP') {
-        if (profile.email_verified) {
-          user.identity = 'mozilla-ldap/' + profile.email;
-          break;
+    // we recognize a few different kinds of 'identities' that auth0 can send our way.
+    // we do not ever expect to have more than one identity in this array, in a practical sense.
+    for (const identity of profile.identities) {
+      if (this.isIdentityProviderRecognized(identity)) {
+        user.identity = `mozilla-auth0/${encodeURIComponent(profile['user_id'])}`;
+
+        if (profile['user_id'].startsWith('github')) {
+          user.identity += encodeURIComponent(`|${profile.nickname}`);
         }
-      // The 'email' connection corresponds to a passwordless login.
-      } else if (provider === 'email' && connection === 'email') {
-        if (profile.email_verified) {
-          user.identity = 'email/' + profile.email;
-          break;
-        }
-      // Login with google really only gives us an email, too.
-      } else if (provider === 'google-oauth2' && connection === 'google-oauth2') {
-        if (profile.email_verified) {
-          user.identity = 'email/' + profile.email;
-          break;
-        }
-      // Github logins take the nickname from the profile; we don't get a reliable
-      // email
-      } else if (provider === 'github' && connection === 'github') {
-        user.identity = 'github/' + profile.nickname;
       }
     }
+
     if (!user.identity) {
       debug('No recognized identity providers');
       return;
     }
 
-    if (profile.app_metadata && profile.app_metadata.groups) {
-      profile.app_metadata.groups.map(group => user.addGroup(group));
-    }
+    // take a user and attach roles to it
+    this.addRoles(profile, user);
 
     return user;
+  }
+
+  addRoles(profile, user) {
+    // grant the everybody role to anyone who authenticates
+    user.addRole('everybody');
+
+    const mozGroupPrefix = 'mozilliansorg_';
+    const mozGroups = [];
+    const ldapGroups = [];
+
+    // Non-prefixed groups are what is known as Mozilla LDAP groups. Groups prefixed by a provider
+    // name and underscore are provided by a specific group engine. For example,
+    // `providername_groupone` is provided by `providername`. Per https://goo.gl/bwWjvE.
+    // For our own purposes, if the prefix is not mozilliansorg. then we treat it as an ldap group
+    profile.groups && profile.groups.forEach(group => {
+      // capture mozillians groups
+      if (group.indexOf(mozGroupPrefix) === 0) {
+        mozGroups.push(group.replace(mozGroupPrefix, ''));
+      } else {
+        // treat everything else as ldap groups
+        ldapGroups.push(group);
+      }
+    });
+
+    user.addRole(`mozilla-user:${user.identityId}`);
+    ldapGroups.forEach(group => user.addRole(`mozilla-group:${group}`));
+
+    // add mozillians roles to everyone
+    mozGroups.map(group => {
+      const str = group.replace(mozGroupPrefix, '');
+
+      user.addRole(`mozillians-group:${str}`);
+    });
   }
 }
 

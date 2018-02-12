@@ -1,5 +1,4 @@
 const assume = require('assume');
-const helper = require('./helper');
 const Handler = require('../src/handlers/mozilla-auth0');
 
 suite('handlers/mozilla-auth0', function() {
@@ -19,40 +18,50 @@ suite('handlers/mozilla-auth0', function() {
     });
 
     test('user for ldap profile', function() {
-      let user = handler.userFromProfile({
+      const user_id = 'ad|Mozilla-LDAP|foo';
+      const user = handler.userFromProfile({
         email: 'foo@mozilla.com',
         email_verified: true,
+        user_id,
         identities: [{provider: 'ad', connection: 'Mozilla-LDAP'}],
       });
-      assume(user.identity).to.equal('mozilla-ldap/foo@mozilla.com');
+
+      assume(user.identity).to.equal(`mozilla-auth0/${encodeURIComponent(user_id)}`);
     });
 
     test('user for email profile', function() {
-      let user = handler.userFromProfile({
+      const user_id = 'email|foo';
+      const user = handler.userFromProfile({
         email: 'foo@bar.com',
         email_verified: true,
+        user_id,
         identities: [{provider: 'email', connection: 'email'}],
       });
-      assume(user.identity).to.equal('email/foo@bar.com');
+
+      assume(user.identity).to.equal(`mozilla-auth0/${encodeURIComponent(user_id)}`);
     });
 
     test('user for google profile', function() {
-      let user = handler.userFromProfile({
+      const user_id = 'google|foo';
+      const user = handler.userFromProfile({
         email: 'foo@bar.com',
         email_verified: true,
-        identities: [{
-          provider: 'google-oauth2',
-          connection: 'google-oauth2'}],
+        user_id,
+        identities: [{provider: 'google-oauth2', connection: 'google-oauth2'}],
       });
-      assume(user.identity).to.equal('email/foo@bar.com');
+
+      assume(user.identity).to.equal(`mozilla-auth0/${encodeURIComponent(user_id)}`);
     });
 
     test('user for github profile', function() {
-      let user = handler.userFromProfile({
+      const user_id = 'github|0000';
+      const user = handler.userFromProfile({
         nickname: 'octocat',
+        user_id,
         identities: [{provider: 'github', connection: 'github'}],
       });
-      assume(user.identity).to.equal('github/octocat');
+
+      assume(user.identity).to.equal(`mozilla-auth0/${encodeURIComponent(`${user_id}|octocat`)}`);
     });
   });
 });
