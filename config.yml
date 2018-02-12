@@ -1,14 +1,8 @@
 Defaults:
   app:
-    authenticators:
-      - auth0
     authorizers:
       - ldap
       - mozillians
-    allowedRedirectHosts:
-      - localhost
-      - tools.taskcluster.net
-      - docs.taskcluster.net
     credentials:
       clientId:     !env TASKCLUSTER_CLIENT_ID
       accessToken:  !env TASKCLUSTER_ACCESS_TOKEN
