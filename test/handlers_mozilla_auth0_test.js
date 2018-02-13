@@ -61,7 +61,7 @@ suite('handlers/mozilla-auth0', function() {
         identities: [{provider: 'github', connection: 'github'}],
       });
 
-      assume(user.identity).to.equal(`mozilla-auth0/${encodeURIComponent(`${user_id}|octocat`)}`);
+      assume(user.identity).to.equal(`mozilla-auth0/${encodeURIComponent(`${user_id}/octocat`)}`);
     });
   });
 });
