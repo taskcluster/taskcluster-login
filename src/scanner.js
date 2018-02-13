@@ -17,7 +17,7 @@ async function scanner(cfg, handlers) {
   // for scans to take longer than for the auth service to be overloaded.
   let auth = new taskcluster.Auth({credentials: cfg.app.credentials});
 
-  const clients = await auth.listClients();
+  const clients = await auth.listClients({prefix: 'mozilla-auth0/'});
 
   // iterate through the clients, constructing a new User as necessary, comparing
   // the client's scopes to the User's scopes and disabling where necessary.
@@ -39,15 +39,15 @@ async function scanner(cfg, handlers) {
           const handler = handlers[h];
           const identity = urlEncodedIdentity.split('/', 2)[1];
           const cleanIdentity = identity.startsWith('github') ?
-            identity.substr(0, identity.lastIndexOf(encodeURIComponent('|'))) :
+            identity.substr(0, identity.lastIndexOf(encodeURIComponent('/'))) :
             identity;
 
-          user = await handler.userFromIdentity(cleanIdentity);
+          user = await handler.userFromIdentity(
+            decodeURIComponent(cleanIdentity)
+          );
         }));
 
       userScopes = (await auth.expandScopes({scopes: user.scopes()})).scopes;
-      // allow the implicit 'assume:client-id:<urlencodedUserId> auth adds for each client
-      userScopes.push('assume:client-id:' + urlEncodedIdentity + '/*');
 
       debug('..against user', user.identity);
     }

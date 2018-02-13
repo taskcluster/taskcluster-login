@@ -74,8 +74,7 @@ class Handler {
     return this._managementApi;
   }
 
-  async profileFromIdentity(urlEncodedIdentity) {
-    const userId = decodeURIComponent(urlEncodedIdentity);
+  async profileFromIdentity(userId) {
     const a0 = await this.getManagementApi();
     const profile = new Promise((resolve, reject) =>
       a0.getUser(userId, (err, prof) => err ? reject(err) : resolve(prof)));
@@ -104,7 +103,9 @@ class Handler {
       return;
     }
 
-    const profile = await this.profileFromIdentity(req.user.sub);
+    const profile = await this.profileFromIdentity(
+      decodeURIComponent(req.user.sub)
+    );
 
     if ('active' in profile && !profile.active) {
       debug('user is not active; rejecting');
@@ -131,8 +132,8 @@ class Handler {
     return false;
   }
 
-  async userFromIdentity(urlEncodedIdentity) {
-    const profile = await this.profileFromIdentity(urlEncodedIdentity);
+  async userFromIdentity(identity) {
+    const profile = await this.profileFromIdentity(identity);
     const user = this.userFromProfile(profile);
 
     return user;
@@ -148,7 +149,7 @@ class Handler {
         user.identity = `mozilla-auth0/${encodeURIComponent(profile['user_id'])}`;
 
         if (profile['user_id'].startsWith('github')) {
-          user.identity += encodeURIComponent(`|${profile.nickname}`);
+          user.identity += encodeURIComponent(`/${profile.nickname}`);
         }
       }
     }
