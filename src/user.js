@@ -12,19 +12,19 @@ class User {
   }
 
   set identity(identity) {
-    assert(identity.split('/').length == 2,
-      'identity must have exactly one '/' character');
     this._identity = identity;
     // always reset roles when changing identity
     this.roles = [];
   }
 
   get identityProviderId() {
-    return this._identity.split('/', 2)[0];
+    return this._identity.split('/')[0];
   }
 
   get identityId() {
-    return this._identity.split('/', 2)[1];
+    return this._identity.split('/')
+      .slice(1)
+      .join('/');
   }
 
   addRole(role) {

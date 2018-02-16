@@ -149,7 +149,7 @@ class Handler {
         user.identity = `mozilla-auth0/${encodeURIComponent(profile['user_id'])}`;
 
         if (profile['user_id'].startsWith('github')) {
-          user.identity += encodeURIComponent(`/${profile.nickname}`);
+          user.identity += `/${profile.nickname}`;
         }
       }
     }
