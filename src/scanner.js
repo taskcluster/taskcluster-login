@@ -22,28 +22,29 @@ async function scanner(cfg, handlers) {
   // iterate through the clients, constructing a new User as necessary, comparing
   // the client's scopes to the User's scopes and disabling where necessary.
   let user, userScopes;
-  let idPattern = /^([^\/]*\/[^\/]*)\/.+$/;
+  // the second capturing group is used to catch a user's github username
+  let idPattern = /^([^\/]*\/[^\/]*)\/([^\/]*).+$/;
   for (let client of clients) {
     debug('examining client', client.clientId);
     if (!client.clientId.match(idPattern) || client.disabled) {
       continue;
     }
 
-    // refresh the user if it does not correspond to this client
-    let urlEncodedIdentity = client.clientId.replace(idPattern, '$1');
+    // when client has a github login, `patternMatch` will have an extra index entry with the user's GH username
+    // e.g., ['mozilla-auth0/github%7c0000/helfi92, 'mozilla-auth0/github%7c0000', 'helfi92']
+    const patternMatch = idPattern.exec(client.clientId);
+    const clientIdentity = patternMatch[1];
 
-    if (!user || user.identity != urlEncodedIdentity) {
+    if (!user || user.identity !== patternMatch.slice(1).join('/')) {
       await Promise.all(Object
         .keys(cfg.handlers)
         .map(async h => {
           const handler = handlers[h];
-          const identity = urlEncodedIdentity.split('/', 2)[1];
-          const cleanIdentity = identity.startsWith('github') ?
-            identity.substr(0, identity.lastIndexOf(encodeURIComponent('/'))) :
-            identity;
+          // remove the prefix and get the encoded user ID
+          const encodedUserId = clientIdentity.split('/', 2)[1];
 
           user = await handler.userFromIdentity(
-            decodeURIComponent(cleanIdentity)
+            decodeURIComponent(encodedUserId)
           );
         }));
 
