@@ -1,5 +1,6 @@
 const assume = require('assume');
 const Handler = require('../src/handlers/mozilla-auth0');
+const {encode} = require('../src/utils');
 
 suite('handlers/mozilla-auth0', function() {
   suite('userFromProfile', function() {
@@ -26,7 +27,7 @@ suite('handlers/mozilla-auth0', function() {
         identities: [{provider: 'ad', connection: 'Mozilla-LDAP'}],
       });
 
-      assume(user.identity).to.equal(`mozilla-auth0/${encodeURIComponent(user_id)}`);
+      assume(user.identity).to.equal(`mozilla-auth0/${encode(user_id)}`);
     });
 
     test('user for email profile', function() {
@@ -38,7 +39,7 @@ suite('handlers/mozilla-auth0', function() {
         identities: [{provider: 'email', connection: 'email'}],
       });
 
-      assume(user.identity).to.equal(`mozilla-auth0/${encodeURIComponent(user_id)}`);
+      assume(user.identity).to.equal(`mozilla-auth0/${encode(user_id)}`);
     });
 
     test('user for google profile', function() {
@@ -50,7 +51,7 @@ suite('handlers/mozilla-auth0', function() {
         identities: [{provider: 'google-oauth2', connection: 'google-oauth2'}],
       });
 
-      assume(user.identity).to.equal(`mozilla-auth0/${encodeURIComponent(user_id)}`);
+      assume(user.identity).to.equal(`mozilla-auth0/${encode(user_id)}`);
     });
 
     test('user for github profile', function() {
@@ -61,7 +62,7 @@ suite('handlers/mozilla-auth0', function() {
         identities: [{provider: 'github', connection: 'github'}],
       });
 
-      assume(user.identity).to.equal(`mozilla-auth0/${encodeURIComponent(user_id)}/octocat`);
+      assume(user.identity).to.equal(`mozilla-auth0/${encode(user_id)}/octocat`);
     });
   });
 });
