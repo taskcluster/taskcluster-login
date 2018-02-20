@@ -1,4 +1,5 @@
 const User = require('./../user');
+const {encode} = require('../utils');
 const assert = require('assert');
 const _ = require('lodash');
 const jwt = require('jsonwebtoken');
@@ -37,6 +38,11 @@ class Handler {
 
     this._managementApiExp = null;
     this._managementApi = null;
+    this._identityPrefix = 'mozilla-auth0/';
+  }
+
+  get identityPrefix() {
+    return this._identityPrefix;
   }
 
   // Get a management API instance, by requesting an API token as needed
@@ -146,7 +152,7 @@ class Handler {
     // we do not ever expect to have more than one identity in this array, in a practical sense.
     for (const identity of profile.identities) {
       if (this.isIdentityProviderRecognized(identity)) {
-        user.identity = `mozilla-auth0/${encodeURIComponent(profile['user_id'])}`;
+        user.identity = `${this.identityPrefix}${encode(profile['user_id'])}`;
 
         if (profile['user_id'].startsWith('github')) {
           user.identity += `/${profile.nickname}`;
