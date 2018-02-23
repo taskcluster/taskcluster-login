@@ -1,5 +1,5 @@
 const User = require('./../user');
-const {encode} = require('../utils');
+const {encode, CLIENT_ID_PATTERN} = require('../utils');
 const assert = require('assert');
 const _ = require('lodash');
 const jwt = require('jsonwebtoken');
@@ -38,11 +38,11 @@ class Handler {
 
     this._managementApiExp = null;
     this._managementApi = null;
-    this._identityPrefix = 'mozilla-auth0/';
+    this._identityProviderId = 'mozilla-auth0';
   }
 
-  get identityPrefix() {
-    return this._identityPrefix;
+  get identityProviderId() {
+    return this._identityProviderId;
   }
 
   // Get a management API instance, by requesting an API token as needed
@@ -80,8 +80,9 @@ class Handler {
     return this._managementApi;
   }
 
-  async profileFromIdentity(userId) {
+  async profileFromUserId(userId) {
     const a0 = await this.getManagementApi();
+
     const profile = new Promise((resolve, reject) =>
       a0.getUser(userId, (err, prof) => err ? reject(err) : resolve(prof)));
 
@@ -109,9 +110,7 @@ class Handler {
       return;
     }
 
-    const profile = await this.profileFromIdentity(
-      decodeURIComponent(req.user.sub)
-    );
+    const profile = await this.profileFromUserId(req.user.sub);
 
     if ('active' in profile && !profile.active) {
       debug('user is not active; rejecting');
@@ -138,11 +137,36 @@ class Handler {
     return false;
   }
 
-  async userFromIdentity(identity) {
-    const profile = await this.profileFromIdentity(identity);
+  async userFromUserId(userId) {
+    const profile = await this.profileFromUserId(userId);
     const user = this.userFromProfile(profile);
 
     return user;
+  }
+
+  userFromClientId(clientId) {
+    const userId = this.userIdFromClientId(clientId);
+    const userPromise = this.userFromUserId(userId);
+
+    return userPromise;
+  }
+
+  userIdFromClientId(clientId) {
+    // when client has a github login, `patternMatch` will have an extra index entry with the user's GH username
+    // e.g., ['mozilla-auth0/github|0000/helfi92, 'mozilla-auth0/github|0000', 'helfi92']
+    const patternMatch = CLIENT_ID_PATTERN.exec(clientId);
+    const encodedUserId = patternMatch[1].replace(`${this.identityProviderId}/`, '');
+
+    return decodeURIComponent(encodedUserId);
+  }
+
+  identityFromClientId(clientId) {
+    // when client has a github login, `patternMatch` will have an extra index entry with the user's GH username
+    // e.g., ['mozilla-auth0/github|0000/helfi92, 'mozilla-auth0/github|0000', 'helfi92']
+    const patternMatch = CLIENT_ID_PATTERN.exec(clientId);
+    const identity = patternMatch.slice(1).join('|');
+
+    return identity;
   }
 
   userFromProfile(profile) {
@@ -152,10 +176,10 @@ class Handler {
     // we do not ever expect to have more than one identity in this array, in a practical sense.
     for (const identity of profile.identities) {
       if (this.isIdentityProviderRecognized(identity)) {
-        user.identity = `${this.identityPrefix}${encode(profile['user_id'])}`;
+        user.identity = `${this.identityProviderId}/${encode(profile['user_id'])}`;
 
         if (profile['user_id'].startsWith('github')) {
-          user.identity += `/${profile.nickname}`;
+          user.identity += `|${profile.nickname}`;
         }
       }
     }

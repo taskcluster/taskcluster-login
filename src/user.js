@@ -1,6 +1,6 @@
 const taskcluster = require('taskcluster-client');
+const {encode} = require('./utils');
 const assert = require('assert');
-const {CLIENT_ID_PATTERN} = require('./utils');
 
 class User {
   constructor() {
@@ -18,18 +18,10 @@ class User {
     this.roles = [];
   }
 
-  get identityPrefix() {
-    return `${this._identity.split('/')[0]}/`;
-  }
-
-  static identityPrefix(clientId) {
-    return `${clientId.split('/')[0]}/`;
-  }
-
   get identityId() {
     return this._identity.split('/')
       .slice(1)
-      .join('/');
+      .join('|');
   }
 
   addRole(role) {
@@ -97,19 +89,6 @@ class User {
       return req.user;
     }
     return new User();
-  }
-
-  static getUser(clientId, handler) {
-    // when login is made via github, `patternMatch` will have an extra index entry with the user's GH username
-    // e.g., ['mozilla-auth0/github|0000/helfi92, 'mozilla-auth0/github|0000', 'helfi92']
-    const patternMatch = CLIENT_ID_PATTERN.exec(clientId);
-    const encodedUserId = patternMatch[1].replace(User.identityPrefix(patternMatch[1]), '');
-
-    const userPromise = handler.userFromIdentity(
-      decodeURIComponent(encodedUserId)
-    );
-
-    return userPromise;
   }
 };
 

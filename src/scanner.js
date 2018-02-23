@@ -1,6 +1,5 @@
 const taskcluster = require('taskcluster-client');
 const scopeUtils = require('taskcluster-lib-scopes');
-const User = require('./user');
 const {CLIENT_ID_PATTERN} = require('./utils');
 const Debug = require('debug');
 
@@ -21,7 +20,7 @@ async function scanner(cfg, handlers) {
 
   const scan = async h => {
     const handler = handlers[h];
-    const clients = await auth.listClients({prefix: handler.identityPrefix});
+    const clients = await auth.listClients({prefix: `${handler.identityProviderId}/`});
 
     // iterate through the clients, constructing a new User as necessary, comparing
     // the client's scopes to the User's scopes and disabling where necessary.
@@ -33,12 +32,8 @@ async function scanner(cfg, handlers) {
         continue;
       }
 
-      // when client has a github login, `patternMatch` will have an extra index entry with the user's GH username
-      // e.g., ['mozilla-auth0/github|0000/helfi92, 'mozilla-auth0/github|0000', 'helfi92']
-      const patternMatch = CLIENT_ID_PATTERN.exec(client.clientId);
-
-      if (!user || user.identity !== patternMatch.slice(1).join('/')) {
-        user = await User.getUser(client.clientId, handler);
+      if (!user || user.identity !== handler.identityFromClientId(client.clientId)) {
+        user = await handler.userFromClientId(client.clientId);
         userScopes = (await auth.expandScopes({scopes: user.scopes()})).scopes;
 
         debug('..against user', user.identity);
@@ -52,9 +47,11 @@ async function scanner(cfg, handlers) {
     }
   };
 
-  Object
-    .keys(cfg.handlers)
-    .map(scan);
+  await Promise.all(
+    Object
+      .keys(cfg.handlers)
+      .map(scan)
+  );
 }
 
 module.exports = scanner;
