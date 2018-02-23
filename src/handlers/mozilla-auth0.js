@@ -1,5 +1,5 @@
 const User = require('./../user');
-const {encode, CLIENT_ID_PATTERN} = require('../utils');
+const {encode, decode, CLIENT_ID_PATTERN} = require('../utils');
 const assert = require('assert');
 const _ = require('lodash');
 const jwt = require('jsonwebtoken');
@@ -157,7 +157,7 @@ class Handler {
     const patternMatch = CLIENT_ID_PATTERN.exec(clientId);
     const encodedUserId = patternMatch[1].replace(`${this.identityProviderId}/`, '');
 
-    return decodeURIComponent(encodedUserId);
+    return decode(encodedUserId);
   }
 
   identityFromClientId(clientId) {
