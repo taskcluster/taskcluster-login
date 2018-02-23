@@ -123,20 +123,6 @@ class Handler {
     return user;
   }
 
-  isIdentityProviderRecognized({provider, connection}) {
-    if (
-      provider === 'ad' && connection === 'Mozilla-LDAP' ||
-      // The 'email' connection corresponds to a passwordless login.
-      provider === 'email' && connection === 'email' ||
-      provider === 'google-oauth2' && connection === 'google-oauth2' ||
-      provider === 'github' && connection === 'github'
-    ) {
-      return true;
-    }
-
-    return false;
-  }
-
   async userFromUserId(userId) {
     const profile = await this.profileFromUserId(userId);
     const user = this.userFromProfile(profile);
@@ -146,25 +132,58 @@ class Handler {
 
   userFromClientId(clientId) {
     const userId = this.userIdFromClientId(clientId);
-    const userPromise = this.userFromUserId(userId);
+    if (!userId) {
+      return;
+    }
 
-    return userPromise;
+    return this.userFromUserId(userId);
+  }
+
+  identityFromClientId(clientId) {
+    const patternMatch = CLIENT_ID_PATTERN.exec(clientId);
+    return patternMatch && patternMatch[1];
   }
 
   userIdFromClientId(clientId) {
-    // when client has a github login, `patternMatch` will have an extra index entry with the user's GH username
-    // e.g., ['mozilla-auth0/github|0000/helfi92, 'mozilla-auth0/github|0000', 'helfi92']
-    const patternMatch = CLIENT_ID_PATTERN.exec(clientId);
-    const encodedUserId = patternMatch[1].replace(`${this.identityProviderId}/`, '');
+    const identity = this.identityFromClientId(clientId);
+
+    if (!identity) {
+      return;
+    }
+
+    let encodedUserId = identity.split('/')[1];
+
+    // Reverse the github username appending, stripping the username.  Note
+    // that github says, "Username may only contain alphanumeric characters or
+    // single hyphens, and cannot begin or end with a hyphen"
+    if (encodedUserId.startsWith('github|')) {
+      encodedUserId = encodedUserId.replace(/\|[^|]*$/, '');
+    }
 
     return decode(encodedUserId);
   }
 
-  identityFromClientId(clientId) {
-    // when client has a github login, `patternMatch` will have an extra index entry with the user's GH username
-    // e.g., ['mozilla-auth0/github|0000/helfi92, 'mozilla-auth0/github|0000', 'helfi92']
-    const patternMatch = CLIENT_ID_PATTERN.exec(clientId);
-    const identity = patternMatch.slice(1).join('|');
+  identityFromProfile(profile) {
+    let identity;
+
+    // Look for a profile.identities element we recognize.  In practice, this is a one-element
+    // array as we do not use Auth0 user linking.
+    profile.identities.forEach(({provider, connection}) => {
+      if (
+        provider === 'ad' && connection === 'Mozilla-LDAP' ||
+        // The 'email' connection corresponds to a passwordless login.
+        provider === 'email' && connection === 'email' ||
+        provider === 'google-oauth2' && connection === 'google-oauth2'
+      ) {
+        assert(!profile.user_id.startsWith('github|'));
+        identity = `${this.identityProviderId}/${encode(profile.user_id)}`;
+      } else if (provider === 'github' && connection === 'github') {
+        // we annotate github userids with `|nickname` since otherwise the userid is just numeric
+        // and difficult for humans to interpret
+        assert(profile.user_id.startsWith('github|'));
+        identity = `${this.identityProviderId}/${encode(profile.user_id)}|${profile.nickname}`;
+      }
+    });
 
     return identity;
   }
@@ -172,18 +191,7 @@ class Handler {
   userFromProfile(profile) {
     const user = new User();
 
-    // we recognize a few different kinds of 'identities' that auth0 can send our way.
-    // we do not ever expect to have more than one identity in this array, in a practical sense.
-    for (const identity of profile.identities) {
-      if (this.isIdentityProviderRecognized(identity)) {
-        user.identity = `${this.identityProviderId}/${encode(profile['user_id'])}`;
-
-        if (profile['user_id'].startsWith('github')) {
-          user.identity += `|${profile.nickname}`;
-        }
-      }
-    }
-
+    user.identity = this.identityFromProfile(profile);
     if (!user.identity) {
       debug('No recognized identity providers');
       return;
