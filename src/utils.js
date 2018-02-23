@@ -2,7 +2,7 @@ const ALLOWED_CHARACTERS_IN_CLIENT_ID = ['|'];
 
 module.exports = {
   // the second capturing group is used to catch a user's github username
-  CLIENT_ID_PATTERN: /^([^\/]*\/[^\/]*)\/([^\/]*).+$/,
+  CLIENT_ID_PATTERN: /^([^\/]*\/[^\/]*)\/([^\/]*).*$/,
   // Limits the encoding so that ALLOWED_CHARACTERS_IN_CLIENT_ID are not encoded
   // To make sure Client IDs are URL safe, we use a slightly different encoding
   // Encoding:

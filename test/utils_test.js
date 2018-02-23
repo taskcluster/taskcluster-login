@@ -31,4 +31,21 @@ suite('utils', function() {
       assume(decode(encoded)).to.equal(str);
     });
   });
+
+  suite('encode/decode', () => {
+    const roundTrip = (name, decoded, encoded) => {
+      test(name, function() {
+        assume(encode(decoded)).to.equal(encoded);
+        assume(decode(encoded)).to.equal(decoded);
+      });
+    };
+
+    roundTrip('simple string', 'abc', 'abc');
+    roundTrip('string with all legal client punctuation characters except / does not get encoded',
+      '@:.+|_-', '@:.+|_-');
+    roundTrip('string with /', 'a/b/c', 'a!2Fb!2Fc');
+    roundTrip('string with ~ (not legal in clientId)', 'a~z', 'a!2Fbz');
+    roundTrip('string with !', 'wow!!', 'wow!21!21');
+    roundTrip('already-encoded', encode('wow!!'), encode('wow!21!21'));
+  });
 });
