@@ -62,7 +62,21 @@ suite('handlers/mozilla-auth0', function() {
         identities: [{provider: 'github', connection: 'github'}],
       });
 
-      assume(user.identity).to.equal(`mozilla-auth0/${encode(user_id)}/octocat`);
+      assume(user.identity).to.equal(`mozilla-auth0/${encode(user_id)}|octocat`);
+    });
+
+    test('user with user_id for which encoding is not identity', () => {
+      ['abc@gmail.com|0000|test', 'abc@gmail.com|0000%2F|test']
+        .forEach(user_id => {
+          const user = handler.userFromProfile({
+            email: 'abc@gmail.com',
+            email_verified: true,
+            user_id,
+            identities: [{provider: 'google-oauth2', connection: 'google-oauth2'}],
+          });
+
+          assume(user.identity).to.equal(`mozilla-auth0/${encode(user_id)}`);
+        });
     });
   });
 });

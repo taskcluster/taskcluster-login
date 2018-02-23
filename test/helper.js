@@ -5,8 +5,6 @@ const load = require('../src/main');
 const config = require('taskcluster-lib-config');
 const _ = require('lodash');
 
-config({profile: 'test'});
-
 var helper = module.exports = {};
 
 // Call this in suites or tests that make API calls, etc; it will set up
