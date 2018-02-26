@@ -1,4 +1,5 @@
-const ALLOWED_CHARACTERS_IN_CLIENT_ID = ['|'];
+// characters that would otherwise be changed when encoded
+const ALLOWED_CHARACTERS_IN_CLIENT_ID = ['|', '@', ':', '+'];
 
 module.exports = {
   // the second capturing group is used to catch a user's github username
@@ -16,6 +17,7 @@ module.exports = {
 
         return acc.replace(new RegExp(encodedSymbol, 'g'), curr);
       }, encodeURIComponent(str.replace(/!/g, '!21')))
+      .replace(/~/g, '!7E')
       .replace(/%/g, '!');
 
     return encoded;

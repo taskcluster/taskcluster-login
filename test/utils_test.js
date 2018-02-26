@@ -44,7 +44,7 @@ suite('utils', function() {
     roundTrip('string with all legal client punctuation characters except / does not get encoded',
       '@:.+|_-', '@:.+|_-');
     roundTrip('string with /', 'a/b/c', 'a!2Fb!2Fc');
-    roundTrip('string with ~ (not legal in clientId)', 'a~z', 'a!2Fbz');
+    roundTrip('string with ~ (not legal in clientId)', 'a~z', 'a!7Ez');
     roundTrip('string with !', 'wow!!', 'wow!21!21');
     roundTrip('already-encoded', encode('wow!!'), encode('wow!21!21'));
   });
