@@ -34,6 +34,11 @@ async function scanner(cfg, handlers) {
 
       if (!user || user.identity !== handler.identityFromClientId(client.clientId)) {
         user = await handler.userFromClientId(client.clientId);
+
+        if (!user) {
+          continue;
+        }
+
         userScopes = (await auth.expandScopes({scopes: user.scopes()})).scopes;
 
         debug('..against user', user.identity);

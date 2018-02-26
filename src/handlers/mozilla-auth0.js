@@ -110,24 +110,34 @@ class Handler {
       return;
     }
 
-    const profile = await this.profileFromUserId(req.user.sub);
+    try {
+      const profile = await this.profileFromUserId(req.user.sub);
 
-    if ('active' in profile && !profile.active) {
-      debug('user is not active; rejecting');
+      if ('active' in profile && !profile.active) {
+        debug('user is not active; rejecting');
+        return;
+      }
+
+      const user = this.userFromProfile(profile);
+      user.expires = new Date(req.user.exp * 1000);
+
+      return user;
+    } catch (err) {
+      debug(`error retrieving profile: ${err}`);
       return;
     }
-
-    const user = this.userFromProfile(profile);
-    user.expires = new Date(req.user.exp * 1000);
-
-    return user;
   }
 
   async userFromUserId(userId) {
-    const profile = await this.profileFromUserId(userId);
-    const user = this.userFromProfile(profile);
+    try {
+      const profile = await this.profileFromUserId(userId);
+      const user = this.userFromProfile(profile);
 
-    return user;
+      return user;
+    } catch (err) {
+      debug(`error retrieving profile: ${err}`);
+      return;
+    }
   }
 
   userFromClientId(clientId) {
