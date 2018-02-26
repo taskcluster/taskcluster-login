@@ -45,7 +45,23 @@ suite('utils', function() {
       '@:.+|_-', '@:.+|_-');
     roundTrip('string with /', 'a/b/c', 'a!2Fb!2Fc');
     roundTrip('string with ~ (not legal in clientId)', 'a~z', 'a!7Ez');
+    roundTrip('string with } (not legal in clientId)', 'a}z', 'a!7Dz');
     roundTrip('string with !', 'wow!!', 'wow!21!21');
+    roundTrip('string with %', 'wow!%!', 'wow!21!25!21');
     roundTrip('already-encoded', encode('wow!!'), encode('wow!21!21'));
+
+    const validClientIdChar = /[A-Za-z0-9@/:.+|_-]/;
+    const hex = i => {
+      const h = i.toString(16).toUpperCase();
+      return h.length === 2 ? `!${h}` : `!0${h}`;
+    };
+    for (let i = 1; i <= 0x7e; i++) {
+      const c = String.fromCharCode(i);
+      if (validClientIdChar.test(c) && c !== '/') {
+        roundTrip(`chr(${i}) (literal)`, c, c);
+      } else {
+        roundTrip(`chr(${i}) (encoded)`, c, hex(i));
+      }
+    }
   });
 });
