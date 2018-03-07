@@ -7,32 +7,29 @@ const migrate = async () => {
 
     // Migrate mozillians-unvouched
     await auth.createRole('everybody', {
-      scopes: await auth.role('mozillians-unvouched').scopes,
+      scopes: await (auth.role('mozillians-unvouched')).scopes,
       description: 'Role assigned to everybody. It should only have the scopes required to run the tutorial, and nothing that might harm other users of Taskcluster.',
     });
 
-    roles
-      .filter(({ roleId }) => roleId.startsWith('mozilla-user:'))
-      .forEach(async ({roleId, scopes}) => {
-        const email = roleId.replace('mozilla-user:', '');
-        const emailPrefix = email.replace('@mozilla.com', '');
+    const filteredRoles = roles.filter(({ roleId }) => roleId.startsWith('mozilla-user:') && roleId !== 'mozilla-user:*');
 
-        if (email === '*') {
-          // Migrate `mozilla-user:*`
-          await auth.createRole('login-identity:*', {
-            scopes,
-            description: '',
-          });
-        } else {
-          const identity = `mozilla-ldap/ad|Mozilla-LDAP|${emailPrefix}`;
+    for (let i = 0; i < filteredRoles.length; i++) {
+      const { roleId, scopes, description } = filteredRoles[i];
+      const emailPrefix = roleId
+        .replace('mozilla-user:', '')
+        .replace('@mozilla.com', '');
+      const identity = `mozilla-ldap/ad|Mozilla-LDAP|${emailPrefix}`;
 
-          // Migrate `mozilla-user:${email}`
-          await auth.createRole(`login-identity:${identity}`, {
-            scopes,
-            description: '',
-          });
-        }
-      });
+      try {
+        // Migrate `mozilla-user:${email}`
+        await auth.createRole(`login-identity:${identity}`, {
+          scopes,
+          description,
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
   } catch (err) {
     console.error(err);
   }
