@@ -3,30 +3,34 @@ const auth = new taskcluster.Auth();
 
 const migrate = async () => {
   try {
-    const clients = await auth.listClients();
+    const roles = await auth.listRoles();
 
     // Migrate mozillians-unvouched
     await auth.createRole('everybody', {
-      scopes: await auth.role('mozillians-unvouched'),
+      scopes: await auth.role('mozillians-unvouched').scopes,
       description: 'Role assigned to everybody. It should only have the scopes required to run the tutorial, and nothing that might harm other users of Taskcluster.',
     });
 
-    clients
-      .filter(({clientId, disabled}) => clientId.startsWith('mozilla-ldap/') && !disabled)
-      .forEach(async (client) => {
-        const email = client.clientId.split('/', 2)[1];
+    roles
+      .filter(({ roleId }) => roleId.startsWith('mozilla-user:'))
+      .forEach(async ({roleId, scopes}) => {
+        const email = roleId.replace('mozilla-user:', '');
         const emailPrefix = email.replace('@mozilla.com', '');
 
-        try {
+        if (email === '*') {
+          // Migrate `mozilla-user:*`
+          await auth.createRole('login-identity:*', {
+            scopes,
+            description: '',
+          });
+        } else {
           const identity = `mozilla-ldap/ad|Mozilla-LDAP|${emailPrefix}`;
 
           // Migrate `mozilla-user:${email}`
           await auth.createRole(`login-identity:${identity}`, {
-            scopes: await auth.role(`mozilla-user:${email}`),
+            scopes,
             description: '',
           });
-        } catch (err) {
-          console.error(`role mozilla-user:${email} not found`);
         }
       });
   } catch (err) {
