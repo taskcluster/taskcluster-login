@@ -225,24 +225,11 @@ class Handler {
     // name and underscore are provided by a specific group engine. For example,
     // `providername_groupone` is provided by `providername`. Per https://goo.gl/bwWjvE.
     // For our own purposes, if the prefix is not mozilliansorg. then we treat it as an ldap group
-    profile.groups && profile.groups.forEach(group => {
-      // capture mozillians groups
-      if (group.indexOf(mozGroupPrefix) === 0) {
-        mozGroups.push(group.replace(mozGroupPrefix, ''));
-      } else {
-        // treat everything else as ldap groups
-        ldapGroups.push(group);
-      }
-    });
+    const mozilliansGroups = (profile.groups || []).filter(g => g.startsWith(mozGroupPrefix)).map(g => g.slice(mozGroupPrefix.length));
+    const ldapGroups = (profile.groups || []).filter(g => !g.startsWith(mozGroupPrefix));
 
+    mozGroups.map(group => user.addRole(`mozillians-group:${group}`));
     ldapGroups.forEach(group => user.addRole(`mozilla-group:${group}`));
-
-    // add mozillians roles to everyone
-    mozGroups.map(group => {
-      const str = group.replace(mozGroupPrefix, '');
-
-      user.addRole(`mozillians-group:${str}`);
-    });
   }
 }
 
