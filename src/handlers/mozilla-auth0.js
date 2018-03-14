@@ -218,18 +218,23 @@ class Handler {
     user.addRole('everybody');
 
     const mozGroupPrefix = 'mozilliansorg_';
-    const mozGroups = [];
-    const ldapGroups = [];
+    const groups = profile.groups || [];
 
     // Non-prefixed groups are what is known as Mozilla LDAP groups. Groups prefixed by a provider
     // name and underscore are provided by a specific group engine. For example,
     // `providername_groupone` is provided by `providername`. Per https://goo.gl/bwWjvE.
     // For our own purposes, if the prefix is not mozilliansorg. then we treat it as an ldap group
-    const mozilliansGroups = (profile.groups || []).filter(g => g.startsWith(mozGroupPrefix)).map(g => g.slice(mozGroupPrefix.length));
-    const ldapGroups = (profile.groups || []).filter(g => !g.startsWith(mozGroupPrefix));
-
-    mozGroups.map(group => user.addRole(`mozillians-group:${group}`));
-    ldapGroups.forEach(group => user.addRole(`mozilla-group:${group}`));
+    user.addRole(
+      ...groups
+        .filter(g => !g.startsWith(mozGroupPrefix))
+        .map(g => `mozilla-group:${g}`)
+    );
+    user.addRole(
+      ...groups
+        .filter(g => g.startsWith(mozGroupPrefix))
+        .map(g => g.slice(mozGroupPrefix.length))
+        .map(g => `mozillians-group:${g}`)
+    );
   }
 }
 
