@@ -216,11 +216,10 @@ class Handler {
   addRoles(profile, user) {
     // grant the everybody role to anyone who authenticates
     user.addRole('everybody');
-    console.log(JSON.stringify(profile));
+
     const mozGroupPrefix = 'mozilliansorg_';
+    const hrisGroupPrefix = 'hris_';
     const groups = (profile.app_metadata.groups || {}) || [];
-
-
 
     // Non-prefixed groups are what is known as Mozilla LDAP groups. Groups prefixed by a provider
     // name and underscore are provided by a specific group engine. For example,
@@ -228,11 +227,13 @@ class Handler {
     // For our own purposes, if the prefix is not mozilliansorg. then we treat it as an ldap group
     user.addRole(
       ...groups
+        .filter(g => !g.startsWith(hrisGroupPrefix))
         .filter(g => !g.startsWith(mozGroupPrefix))
         .map(g => `mozilla-group:${g}`)
     );
     user.addRole(
       ...groups
+        .filter(g => !g.startsWith(hrisGroupPrefix))
         .filter(g => g.startsWith(mozGroupPrefix))
         .map(g => g.slice(mozGroupPrefix.length))
         .map(g => `mozillians-group:${g}`)
